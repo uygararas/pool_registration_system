@@ -82,29 +82,26 @@ def logout():
 
 @app.route('/sessions', methods=['GET', 'POST'])
 def sessions():
-    if 'loggedin' in session:  # Check if the user is logged in
+    if 'loggedin' in session:  
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         
         if request.method == 'POST' and 'session_id' in request.form:
             session_id = request.form['session_id']
-            # Check if the swimmer is already booked for the session
             cursor.execute(
                 'SELECT * FROM booking WHERE swimmer_id = %s AND session_id = %s',
                 (session['userid'], session_id)
             )
             existing_booking = cursor.fetchone()
             if existing_booking:
-                flash('You are already booked for this session!', 'warning')
+                flash('You are already booked for this session!', 'warning') # type: ignore
             else:
-                # Insert the booking
                 cursor.execute(
                     'INSERT INTO booking (swimmer_id, session_id) VALUES (%s, %s)',
                     (session['userid'], session_id)
                 )
                 mysql.connection.commit()
-                flash('Session booked successfully!', 'success')
+                flash('Session booked successfully!', 'success') # type: ignore
         
-        # Fetch all available sessions
         cursor.execute(
             'SELECT session.session_id, session.description, session.date, session.start_time, session.end_time, pool.location '
             'FROM session '
@@ -116,3 +113,6 @@ def sessions():
         return render_template('sessions.html', sessions=sessions)
     
     return redirect(url_for('login'))
+
+if __name__ == '__main__':
+    app.run()
