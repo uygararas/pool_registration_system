@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import re
@@ -15,104 +15,190 @@ app.config['MYSQL_DB'] = 'cs353project'
 
 mysql = MySQL(app)
 
-@app.route('/')
-def home():
-    if 'loggedin' in session:
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+def get_user_role(user_id):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Check for Admin (PoolAdmin)
+    cursor.execute('SELECT * FROM pool_admin WHERE user_id = %s', (user_id,))
+    if cursor.fetchone():
+        return 'Admin'
+    
+    # Check for Coach
+    cursor.execute('SELECT * FROM coach WHERE user_id = %s', (user_id,))
+    if cursor.fetchone():
+        return 'Coach'
+    
+    # Check for Lifeguard
+    cursor.execute('SELECT * FROM lifeguard WHERE user_id = %s', (user_id,))
+    if cursor.fetchone():
+        return 'Lifeguard'
+    
+    # Check for Member
+    cursor.execute('SELECT * FROM member WHERE user_id = %s', (user_id,))
+    if cursor.fetchone():
+        return 'Member'
+    
+    # Default role
+    return 'User'
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    message = ''
-    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
-        username = request.form['username']
-        password = request.form['password']
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM User WHERE username = %s AND password = %s', (username, password))
-        user = cursor.fetchone()
-        if user:
-            session['loggedin'] = True
-            session['userid'] = user['id']
-            session['username'] = user['username']
-            return redirect(url_for('tasks'))
-        else:
-            message = 'Invalid username or password!'
-    return render_template('login.html', message=message)
+
+@app.route('/test')
+def test():
+    print("test")
+    return "Server is running"
+
+@app.route('/')
+def index():
+    if 'loggedin' in session:
+        return redirect(url_for('homepage'))
+    return redirect(url_for('login'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    message = ''
-    if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form:
-        username = request.form['username']
-        password = request.form['password']
+    if request.method == 'POST' and all(k in request.form for k in ['email', 'password']):
         email = request.form['email']
+        password = request.form['password'] 
+        forename = request.form['forename']
+        surname = request.form['surname']
+        gender = request.form['gender']
+        birth_date = request.form['birth_date']
+        role = request.form['role']
+
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM User WHERE username = %s', (username,))
+        
+        # Check if user already exists
+        cursor.execute('SELECT * FROM user WHERE email = %s', (email,))
         account = cursor.fetchone()
         if account:
-            message = 'Username already exists!'
+            flash('Account already exists!', 'danger')
+            return render_template('register.html')
         else:
-            cursor.execute('INSERT INTO User (username, password, email) VALUES (%s, %s, %s)', (username, password, email))
+            # Insert into user table
+            cursor.execute('INSERT INTO user (email, password, forename, surname, gender, birth_date) VALUES (%s, %s, %s, %s, %s, %s)',
+                           (email, password, forename, surname, gender, birth_date))
             mysql.connection.commit()
-            message = 'Registration successful!'
+
+            # Get the newly created user_id
+            cursor.execute('SELECT user_id FROM user WHERE email = %s', (email,))
+            user = cursor.fetchone()
+            user_id = user['user_id']
+
+            # Depending on role, insert into respective tables
+            if role == 'Employee':
+                salary = request.form.get('salary')
+                emp_date = request.form.get('emp_date')
+                cursor.execute('INSERT INTO employee (user_id, salary, emp_date) VALUES (%s, %s, %s)',
+                               (user_id, salary, emp_date))
+                mysql.connection.commit()
+
+            elif role == 'PoolAdmin':
+                # PoolAdmin is a type of Employee
+                salary = request.form.get('salary')
+                emp_date = request.form.get('emp_date')
+                department = request.form.get('department')
+                cursor.execute('INSERT INTO employee (user_id, salary, emp_date) VALUES (%s, %s, %s)',
+                               (user_id, salary, emp_date))
+                cursor.execute('INSERT INTO pool_admin (user_id, department) VALUES (%s, %s)',
+                               (user_id, department))
+                mysql.connection.commit()
+
+            elif role == 'Lifeguard':
+                salary = request.form.get('salary')
+                emp_date = request.form.get('emp_date')
+                license_no = request.form.get('license_no')
+                cursor.execute('INSERT INTO employee (user_id, salary, emp_date) VALUES (%s, %s, %s)',
+                               (user_id, salary, emp_date))
+                cursor.execute('INSERT INTO lifeguard (user_id, license_no) VALUES (%s, %s)',
+                               (user_id, license_no))
+                mysql.connection.commit()
+
+            elif role == 'Coach':
+                salary = request.form.get('salary')
+                emp_date = request.form.get('emp_date')
+                rank = request.form.get('rank')
+                specialization = request.form.get('specialization')
+                cursor.execute('INSERT INTO employee (user_id, salary, emp_date) VALUES (%s, %s, %s)',
+                               (user_id, salary, emp_date))
+                cursor.execute('INSERT INTO coach (user_id, rank, specialization) VALUES (%s, %s, %s)',
+                               (user_id, rank, specialization))
+                mysql.connection.commit()
+
+            elif role == 'Swimmer':
+                swimming_level = request.form.get('swimming_level')
+                cursor.execute('INSERT INTO swimmer (user_id, swimming_level) VALUES (%s, %s)',
+                               (user_id, swimming_level))
+                mysql.connection.commit()
+
+            elif role == 'Member':
+                # Member is a type of Swimmer
+                swimming_level = request.form.get('swimming_level')
+                free_training_remaining = request.form.get('free_training_remaining', 0)
+                cursor.execute('INSERT INTO swimmer (user_id, swimming_level) VALUES (%s, %s)',
+                               (user_id, swimming_level))
+                cursor.execute('INSERT INTO member (user_id, free_training_remaining) VALUES (%s, %s)',
+                               (user_id, free_training_remaining))
+                mysql.connection.commit()
+
+            flash('You have successfully registered!', 'success')
             return redirect(url_for('login'))
-    return render_template('register.html', message=message)
+    return render_template('register.html')
 
-
-@app.route('/dashboard')
-def dashboard():
-    if 'loggedin' in session:  # Check if the user is logged in
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST' and all(k in request.form for k in ['email', 'password']):
+        email = request.form['email']
+        password = request.form['password']  # Plain text password
+        
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute(
-            'SELECT * FROM booking JOIN session ON booking.session_id = session.session_id WHERE swimmer_id = %s',
-            (session['userid'],)
-        )
-        bookings = cursor.fetchall()
-        return render_template('dashboard.html', username=session['username'], bookings=bookings)
-    return redirect(url_for('login'))
+        cursor.execute('SELECT * FROM user WHERE email = %s', (email,))
+        account = cursor.fetchone()
+        
+        if account and account['password'] == password:
+            # User exists and password is correct
+            user_id = account['user_id']
+            role = get_user_role(user_id)  # Determine the user's role
+            
+            session['loggedin'] = True
+            session['user_id'] = user_id
+            session['email'] = account['email']
+            session['forename'] = account['forename']
+            session['surname'] = account['surname']
+            session['role'] = role  # Store role in session
+            flash('Logged in successfully as {}!'.format(role), 'success')
+            return redirect(url_for('homepage'))
+        else:
+            flash('Incorrect email/password!', 'danger')
+    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
+    # Remove session data
     session.pop('loggedin', None)
-    session.pop('userid', None)
-    session.pop('username', None)
+    session.pop('user_id', None)
+    session.pop('email', None)
+    session.pop('forename', None)
+    session.pop('surname', None)
+    session.pop('role', None)
+    flash('You have been logged out!', 'info')
     return redirect(url_for('login'))
 
-
-
-@app.route('/sessions', methods=['GET', 'POST'])
-def sessions():
-    if 'loggedin' in session:  
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+@app.route('/homepage')
+def homepage():
+    if 'loggedin' in session:
+        role = session.get('role', 'User')
+        forename = session.get('forename', 'User')
         
-        if request.method == 'POST' and 'session_id' in request.form:
-            session_id = request.form['session_id']
-            cursor.execute(
-                'SELECT * FROM booking WHERE swimmer_id = %s AND session_id = %s',
-                (session['userid'], session_id)
-            )
-            existing_booking = cursor.fetchone()
-            if existing_booking:
-                flash('You are already booked for this session!', 'warning') # type: ignore
-            else:
-                cursor.execute(
-                    'INSERT INTO booking (swimmer_id, session_id) VALUES (%s, %s)',
-                    (session['userid'], session_id)
-                )
-                mysql.connection.commit()
-                flash('Session booked successfully!', 'success') # type: ignore
-        
-        cursor.execute(
-            'SELECT session.session_id, session.description, session.date, session.start_time, session.end_time, pool.location '
-            'FROM session '
-            'JOIN pool ON session.pool_id = pool.pool_id '
-            'WHERE session.session_id NOT IN (SELECT session_id FROM booking WHERE swimmer_id = %s)',
-            (session['userid'],)
-        )
-        sessions = cursor.fetchall()
-        return render_template('sessions.html', sessions=sessions)
-    
+        if role == 'Admin':
+            return render_template('admin_homepage.html', forename=forename)
+        elif role == 'Coach':
+            return render_template('coach_homepage.html', forename=forename)
+        elif role == 'Lifeguard':
+            return render_template('lifeguard_homepage.html', forename=forename)
+        elif role == 'Member':
+            return render_template('member_homepage.html', forename=forename)
+        else:
+            return render_template('homepage.html', forename=forename)
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=5000)

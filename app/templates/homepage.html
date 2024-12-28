@@ -1,0 +1,16 @@
+<!-- templates/homepage.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Homepage</title>
+    <!-- Include Bootstrap CSS for styling (optional) -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h2 class="mt-4">Welcome, {{ forename }}!</h2>
+    <p>This is the homepage.</p>
+    <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+</div>
+</body>
+</html>
