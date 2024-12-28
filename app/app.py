@@ -214,14 +214,22 @@ def create_lesson():
             lane_no = request.form['lane_no']
             capacity = request.form['capacity']
             gender_restriction = request.form['gender_restriction']
-            
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             
             # Validate Pool and Lane
-            cursor.execute('SELECT * FROM lane WHERE pool_id = %s AND lane_no = %s', (pool_id, lane_no))
-            lane = cursor.fetchone()
-            if not lane:
-                flash('Invalid Pool or Lane number.', 'danger')
+            cursor.execute("""
+                SELECT * FROM session 
+                WHERE pool_id = %s AND lane_no = %s AND date = %s
+                  AND (
+                      (start_time < %s AND end_time > %s) OR
+                      (start_time < %s AND end_time > %s) OR
+                      (start_time >= %s AND end_time <= %s)
+                  )
+            """, (pool_id, lane_no, class_date, end_time, start_time, end_time, start_time, start_time, end_time))
+            conflict = cursor.fetchone()
+            
+            if conflict:
+                flash('Conflict detected: Another session overlaps with the selected time and lane.', 'danger')
                 return redirect(url_for('create_lesson'))
             
             # Insert into session table
@@ -264,16 +272,6 @@ def create_lesson():
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-# ... existing imports ...
-
-# ... existing app configuration ...
-
-# Existing routes ...
-
-# New Route to Fetch Lanes for a Given Poo
-# ... rest of the code ...
-
 # Route to display the form for creating a One-to-One Training
 @app.route('/create_one_to_one_training', methods=['GET', 'POST'])
 def create_one_to_one_training():
@@ -290,11 +288,20 @@ def create_one_to_one_training():
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             
             # Validate Pool and Lane
-            cursor.execute('SELECT * FROM lane WHERE pool_id = %s AND lane_no = %s', (pool_id, lane_no))
-            lane = cursor.fetchone()
-            if not lane:
-                flash('Invalid Pool or Lane number.', 'danger')
-                return redirect(url_for('create_one_to_one_training'))
+            cursor.execute("""
+                SELECT * FROM session 
+                WHERE pool_id = %s AND lane_no = %s AND date = %s
+                  AND (
+                      (start_time < %s AND end_time > %s) OR
+                      (start_time < %s AND end_time > %s) OR
+                      (start_time >= %s AND end_time <= %s)
+                  )
+            """, (pool_id, lane_no, training_date, end_time, start_time, end_time, start_time, start_time, end_time))
+            conflict = cursor.fetchone()
+            
+            if conflict:
+                flash('Conflict detected: Another session overlaps with the selected time and lane.', 'danger')
+                return redirect(url_for('create_lesson'))
             
             # Insert into session table
             try:
@@ -322,7 +329,6 @@ def create_one_to_one_training():
             return redirect(url_for('homepage'))
         
         else:
-            # GET request, render the form
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             cursor.execute("""
                 SELECT pool.pool_id, pool.location, pool.chlorine_level, COUNT(lane.lane_no) AS lane_count
