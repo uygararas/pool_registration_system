@@ -23,8 +23,15 @@
     
     <h2 class="mt-4">Welcome, Coach {{ forename }}!</h2>
     <p>This is the Coach Dashboard.</p>
-    <!-- Add Coach-specific functionalities here -->
-    <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+    
+    <!-- Add Buttons for Creating Lessons and One-to-One Trainings -->
+    <div class="mt-4">
+        <a href="{{ url_for('create_lesson') }}" class="btn btn-primary">Create Lesson</a>
+        <a href="{{ url_for('create_one_to_one_training') }}" class="btn btn-success">Create One-to-One Training</a>
+    </div>
+    
+    <!-- Add other Coach-specific functionalities here -->
+    <a href="{{ url_for('logout') }}" class="btn btn-secondary mt-3">Logout</a>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

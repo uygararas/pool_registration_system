@@ -11,7 +11,7 @@ CREATE TABLE user (
 -- 4.1 Employee Table
 CREATE TABLE employee (
     user_id INT PRIMARY KEY,
-    salary DECIMAL(10,2) NOT NULL,
+    salary DECIMAL(10,2) DEFAULT 17002,
     emp_date DATE NOT NULL,
     FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE
 );
