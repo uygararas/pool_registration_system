@@ -117,11 +117,11 @@ CREATE TABLE IF NOT EXISTS lesson (
     coach_id INT NOT NULL,
     student_count INT NOT NULL,
     capacity INT NOT NULL,
-    lesson_type VARCHAR(50) NOT NULL,
-    isWomenSession BOOLEAN NOT NULL DEFAULT FALSE,
+    session_type ENUM('WomenOnly', 'MenOnly', 'Mixed') NOT NULL DEFAULT 'Mixed',
     FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE,
     FOREIGN KEY (coach_id) REFERENCES coach(user_id) ON DELETE CASCADE
 );
+
 
 -- 4.15 OneToOneTraining Table
 CREATE TABLE IF NOT EXISTS oneToOneTraining (
