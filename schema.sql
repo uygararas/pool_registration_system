@@ -276,23 +276,25 @@ INSERT INTO member (user_id, free_training_remaining) VALUES
 (6, 5);
 
 -- Insert Lessons (Session and Lesson Details)
-INSERT INTO session (session_id, description, pool_id, lane_no, date, start_time, end_time)
-VALUES
-(1, 'Beginner swimming lesson focused on freestyle basics', 1, 1, '2024-01-05', '10:00:00', '11:00:00'),
-(2, 'Advanced butterfly technique session', 1, 2, '2024-01-05', '11:30:00', '12:30:00');
+-- Insert Sessions (3 in Pool 1 and 3 in Pool 2)
+INSERT INTO session (session_id, description, pool_id, lane_no, date, start_time, end_time) VALUES
+(1, 'Advanced swimming techniques', 1, 1, '2024-01-01', '09:00:00', '10:00:00'),
+(2, 'Beginner swimming lesson', 1, 2, '2024-01-02', '10:00:00', '11:00:00'),
+(3, 'Intermediate butterfly technique', 1, 3, '2024-01-03', '11:00:00', '12:00:00'),
+(4, 'Personalized training for freestyle', 2, 1, '2024-01-04', '09:00:00', '10:00:00'),
+(5, 'One-to-one backstroke training', 2, 2, '2024-01-05', '10:00:00', '11:00:00'),
+(6, 'Advanced team lesson', 2, 3, '2024-01-06', '11:00:00', '12:00:00');
 
-INSERT INTO lesson (session_id, coach_id, student_count, capacity, lesson_type, isWomenSession)
-VALUES
-(1, 2, 5, 10, 'Group Lesson', FALSE),
-(2, 2, 4, 8, 'Group Lesson', TRUE);
+-- Assign Lesson or One-to-One Training types
+-- Lesson sessions (Session IDs 1, 2, and 6)
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type) VALUES
+(1, 2, 10, 15, 'Mixed'),
+(2, 2, 8, 12, 'WomenOnly'),
+(6, 2, 12, 16, 'Mixed');
 
--- Insert One-to-One Training (Session and Training Details)
-INSERT INTO session (session_id, description, pool_id, lane_no, date, start_time, end_time)
-VALUES
-(3, 'Private training focused on backstroke improvement', 1, 3, '2024-01-05', '13:00:00', '14:00:00'),
-(4, 'One-to-one session to refine turns and finishes', 1, 4, '2024-01-05', '14:30:00', '15:30:00');
+-- One-to-One Training sessions (Session IDs 3, 4, and 5)
+INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style) VALUES
+(3, 2, 'Butterfly'),
+(4, 2, 'Freestyle'),
+(5, 2, 'Backstroke');
 
-INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style)
-VALUES
-(3, 2, 'Backstroke'),
-(4, 2, 'Freestyle');

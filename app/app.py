@@ -186,42 +186,16 @@ def logout():
 def homepage():
     if 'loggedin' in session:
         role = session.get('role', 'User')
-        forename = session.get('forename', 'User')
-
-        if role == 'Coach':
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-            coach_id = session['user_id']
-
-            # Lessons (General Classes)
-            cursor.execute("""
-                SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, s.pool_id, s.lane_no, l.session_type
-                FROM lesson l
-                JOIN session s ON l.session_id = s.session_id
-                WHERE l.coach_id = %s
-            """, (coach_id,))
-            lessons = cursor.fetchall()
-
-            # One-to-One Trainings
-            cursor.execute("""
-                SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, s.pool_id, s.lane_no, o.swimming_style
-                FROM oneToOneTraining o
-                JOIN session s ON o.session_id = s.session_id
-                WHERE o.coach_id = %s
-            """, (coach_id,))
-            one_to_one_trainings = cursor.fetchall()
-
-            return render_template(
-                'coach_homepage.html',
-                forename=forename,
-                lessons=lessons,
-                one_to_one_trainings=one_to_one_trainings
-            )
-
+        if role == 'Admin':
+            return redirect(url_for('admin_homepage'))
+        elif role == 'Coach':
+            return redirect(url_for('coach_homepage'))
         elif role == 'Lifeguard':
             return redirect(url_for('lifeguard_homepage'))
         elif role == 'Member':
             return redirect(url_for('member_homepage'))
         else:
+            forename = session.get('forename', 'User')
             return render_template('homepage.html', forename=forename)
 
     return redirect(url_for('login'))
@@ -328,8 +302,35 @@ def admin_homepage():
 def coach_homepage():
     if 'loggedin' in session and session.get('role') == 'Coach':
         forename = session.get('forename', 'Coach')
-        # Implement Coach-specific logic and render the coach_homepage.html
-        return render_template('coach_homepage.html', forename=forename)
+        coach_id = session['user_id']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+        # Fetch Lessons (General Classes)
+        cursor.execute("""
+            SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, 
+                   s.pool_id, s.lane_no, l.session_type
+            FROM lesson l
+            JOIN session s ON l.session_id = s.session_id
+            WHERE l.coach_id = %s
+        """, (coach_id,))
+        lessons = cursor.fetchall()
+
+        # Fetch One-to-One Trainings
+        cursor.execute("""
+            SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, 
+                   s.pool_id, s.lane_no, o.swimming_style
+            FROM oneToOneTraining o
+            JOIN session s ON o.session_id = s.session_id
+            WHERE o.coach_id = %s
+        """, (coach_id,))
+        one_to_one_trainings = cursor.fetchall()
+
+        return render_template(
+            'coach_homepage.html',
+            forename=forename,
+            lessons=lessons,
+            one_to_one_trainings=one_to_one_trainings
+        )
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
