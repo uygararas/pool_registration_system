@@ -8,7 +8,7 @@ CREATE TABLE user (
     birth_date DATE NOT NULL
 );
 
--- 4.2 Employee Table
+-- 4.1 Employee Table
 CREATE TABLE employee (
     user_id INT PRIMARY KEY,
     salary DECIMAL(10,2) NOT NULL,
@@ -51,3 +51,211 @@ CREATE TABLE member (
     free_training_remaining INT DEFAULT 0,
     FOREIGN KEY (user_id) REFERENCES swimmer(user_id) ON DELETE CASCADE
 );
+
+
+-- 4.7 PhoneNumber Table
+CREATE TABLE IF NOT EXISTS phoneNumber (
+    phone_number VARCHAR(20) PRIMARY KEY,
+    swimmer_id INT NOT NULL,
+    FOREIGN KEY (swimmer_id) REFERENCES swimmer(user_id) ON DELETE CASCADE
+);
+
+-- 4.12 Pool Table
+CREATE TABLE IF NOT EXISTS pool (
+    pool_id INT AUTO_INCREMENT PRIMARY KEY,
+    location VARCHAR(255) NOT NULL,
+    chlorine_level DECIMAL(5,2) NOT NULL
+);
+
+-- 4.11 Lane Table
+CREATE TABLE IF NOT EXISTS lane (
+    pool_id INT NOT NULL,
+    lane_no INT NOT NULL,
+    PRIMARY KEY (pool_id, lane_no),
+    FOREIGN KEY (pool_id) REFERENCES pool(pool_id) ON DELETE CASCADE
+);
+
+-- 4.8 Session Table
+CREATE TABLE IF NOT EXISTS session (
+    session_id INT AUTO_INCREMENT PRIMARY KEY,
+    description TEXT,
+    pool_id INT NOT NULL,
+    lane_no INT NOT NULL,
+    date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    FOREIGN KEY (pool_id, lane_no) REFERENCES lane(pool_id, lane_no) ON DELETE CASCADE
+);
+
+-- 4.9 Booking Table
+CREATE TABLE IF NOT EXISTS booking (
+    swimmer_id INT NOT NULL,
+    session_id INT NOT NULL,
+    PRIMARY KEY (swimmer_id, session_id),
+    FOREIGN KEY (swimmer_id) REFERENCES swimmer(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE
+);
+
+-- 4.10 Guards Table
+CREATE TABLE IF NOT EXISTS guards (
+    lifeguard_id INT NOT NULL,
+    session_id INT NOT NULL,
+    PRIMARY KEY (lifeguard_id, session_id),
+    FOREIGN KEY (lifeguard_id) REFERENCES lifeguard(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE
+);
+
+-- 4.13 FreeSession Table
+CREATE TABLE IF NOT EXISTS freeSession (
+    session_id INT PRIMARY KEY,
+    FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE
+);
+
+-- 4.14 Lesson Table
+CREATE TABLE IF NOT EXISTS lesson (
+    session_id INT PRIMARY KEY,
+    coach_id INT NOT NULL,
+    student_count INT NOT NULL,
+    capacity INT NOT NULL,
+    lesson_type VARCHAR(50) NOT NULL,
+    FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE,
+    FOREIGN KEY (coach_id) REFERENCES coach(user_id) ON DELETE CASCADE
+);
+
+-- 4.15 OneToOneTraining Table
+CREATE TABLE IF NOT EXISTS oneToOneTraining (
+    session_id INT PRIMARY KEY,
+    coach_id INT NOT NULL,
+    swimming_style VARCHAR(100) NOT NULL,
+    FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE,
+    FOREIGN KEY (coach_id) REFERENCES coach(user_id) ON DELETE CASCADE
+);
+
+-- 4.16 Report Table
+CREATE TABLE IF NOT EXISTS report (
+    report_id INT AUTO_INCREMENT PRIMARY KEY,
+    admin_id INT NOT NULL,
+    report_name VARCHAR(255) NOT NULL,
+    date DATE NOT NULL,
+    content TEXT,
+    number_of_swimmer INT,
+    number_of_lifeguard INT,
+    most_liked_lesson VARCHAR(255),
+    most_liked_coach VARCHAR(255),
+    average_queue_length DECIMAL(5,2),
+    FOREIGN KEY (admin_id) REFERENCES pool_admin(user_id) ON DELETE CASCADE
+);
+
+-- 4.17 Review Table
+CREATE TABLE IF NOT EXISTS review (
+    review_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    comment TEXT,
+    rating DECIMAL(2,1) CHECK (rating >= 0 AND rating <= 5),
+    FOREIGN KEY (user_id) REFERENCES swimmer(user_id) ON DELETE CASCADE
+);
+
+-- 4.18 CoachReview Table
+CREATE TABLE IF NOT EXISTS coachReview (
+    review_id INT PRIMARY KEY,
+    coach_id INT NOT NULL,
+    FOREIGN KEY (review_id) REFERENCES review(review_id) ON DELETE CASCADE,
+    FOREIGN KEY (coach_id) REFERENCES coach(user_id) ON DELETE CASCADE
+);
+
+-- 4.19 LessonReview Table
+CREATE TABLE IF NOT EXISTS lessonReview (
+    review_id INT PRIMARY KEY,
+    lesson_id INT NOT NULL,
+    FOREIGN KEY (review_id) REFERENCES review(review_id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_id) REFERENCES lesson(session_id) ON DELETE CASCADE
+);
+
+-- 4.20 WaitingQueue Table
+CREATE TABLE IF NOT EXISTS waitQueue (
+    lesson_id INT PRIMARY KEY,
+    number_of_waiting INT NOT NULL DEFAULT 0,
+    FOREIGN KEY (lesson_id) REFERENCES lesson(session_id) ON DELETE CASCADE
+);
+
+-- 4.21 SwimmerWaitQueue Table
+CREATE TABLE IF NOT EXISTS swimmerWaitQueue (
+    swimmer_id INT NOT NULL,
+    lesson_id INT NOT NULL,
+    request_date DATE NOT NULL,
+    PRIMARY KEY (swimmer_id, lesson_id),
+    FOREIGN KEY (swimmer_id) REFERENCES member(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_id) REFERENCES waitQueue(lesson_id) ON DELETE CASCADE
+);
+
+-- Mock Data
+-- 1. Insert Pools
+INSERT INTO pool (pool_id, location, chlorine_level) VALUES
+(1, 'Downtown Indoor Pool', 1.50),
+(2, 'Uptown Outdoor Pool', 1.20);
+
+-- 2. Insert Lanes for Each Pool
+-- Lanes for Pool 1 (Indoor)
+INSERT INTO lane (pool_id, lane_no) VALUES
+(1, 1),
+(1, 2),
+(1, 3),
+(1, 4),
+(1, 5),
+(1, 6);
+
+-- Lanes for Pool 2 (Outdoor)
+INSERT INTO lane (pool_id, lane_no) VALUES
+(2, 1),
+(2, 2),
+(2, 3),
+(2, 4),
+(2, 5),
+(2, 6);
+
+-- 3. Insert Users and Their Related Data
+
+-- 3.1 PoolAdmin User
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(1, 'john-admin@example.com', 'password', 'John-Admin', 'Doe', 'Male', '1980-01-01');
+INSERT INTO employee (user_id, salary, emp_date) VALUES
+(1, 60000.00, '2010-05-20');
+INSERT INTO pool_admin (user_id, department) VALUES
+(1, 'Operations');
+
+-- 3.2 Coach User
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(2, 'jane-coach@example.com', 'password', 'Jane-Coach', 'Smith', 'Female', '1985-02-15');
+INSERT INTO employee (user_id, salary, emp_date) VALUES
+(2, 50000.00, '2012-07-10');
+INSERT INTO coach (user_id, rank, specialization) VALUES
+(2, 'Senior', 'Butterfly');
+
+-- 3.3 Lifeguard User
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(3, 'bob-lifeguard@example.com', 'password', 'Bob-Lifeguard', 'Brown', 'Male', '1990-03-25');
+INSERT INTO employee (user_id, salary, emp_date) VALUES
+(3, 45000.00, '2015-09-01');
+INSERT INTO lifeguard (user_id, license_no) VALUES
+(3, 'LG12345');
+
+-- 3.4 Employee User
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(4, 'alice-employee@example.com', 'password', 'Alice-Employee', 'Davis', 'Female', '1992-04-30');
+INSERT INTO employee (user_id, salary, emp_date) VALUES
+(4, 40000.00, '2018-11-15');
+
+-- 3.5 Swimmer User
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(5, 'charlie-swimmer@example.com', 'password', 'Charlie-Swimmer', 'Miller', 'Other', '2000-06-20');
+INSERT INTO swimmer (user_id, swimming_level) VALUES
+(5, 'Intermediate');
+
+-- 3.6 Member User
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(6, 'diana-member@example.com', 'password', 'Diana-Member', 'Wilson', 'Female', '1995-07-10');
+INSERT INTO swimmer (user_id, swimming_level) VALUES
+(6, 'Advanced');
+INSERT INTO member (user_id, free_training_remaining) VALUES
+(6, 5);
