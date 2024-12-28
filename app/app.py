@@ -188,18 +188,136 @@ def homepage():
         role = session.get('role', 'User')
         forename = session.get('forename', 'User')
         
+        # Redirect to the appropriate homepage based on role
         if role == 'Admin':
-            return render_template('admin_homepage.html', forename=forename)
+            return redirect(url_for('admin_homepage'))
         elif role == 'Coach':
-            return render_template('coach_homepage.html', forename=forename)
+            return redirect(url_for('coach_homepage'))
         elif role == 'Lifeguard':
-            return render_template('lifeguard_homepage.html', forename=forename)
+            return redirect(url_for('lifeguard_homepage'))
         elif role == 'Member':
-            return render_template('member_homepage.html', forename=forename)
+            return redirect(url_for('member_homepage'))
         else:
             return render_template('homepage.html', forename=forename)
     return redirect(url_for('login'))
 
+# New Endpoint for Lifeguard Homepage
+@app.route('/lifeguard_homepage')
+def lifeguard_homepage():
+    if 'loggedin' in session and session.get('role') == 'Lifeguard':
+        forename = session.get('forename', 'Lifeguard')
+        lifeguard_id = session['user_id']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Fetch sessions without lifeguard
+        # Fetch sessions without lifeguard, sorted by start_time ascending
+        cursor.execute('SELECT * FROM SessionsWithoutLifeguard ORDER BY date ASC, start_time ASC')
+        sessions_without_lifeguard = cursor.fetchall()
+
+        # Fetch sessions assigned to this lifeguard, sorted by start_time ascending
+        cursor.execute("""
+        SELECT s.*, p.location AS pool_location
+        FROM session s
+        JOIN guards g ON s.session_id = g.session_id
+        JOIN pool p ON s.pool_id = p.pool_id
+        WHERE g.lifeguard_id = %s
+            ORDER BY s.date ASC, s.start_time ASC
+            """, (lifeguard_id,))
+        assigned_sessions = cursor.fetchall()
+
+        
+        return render_template('lifeguard_homepage.html', forename=forename,
+                               sessions_without_lifeguard=sessions_without_lifeguard,
+                               assigned_sessions=assigned_sessions)
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+# Route to handle assigning a session to a lifeguard
+@app.route('/assign_session/<int:session_id>', methods=['POST'])
+def assign_session(session_id):
+    if 'loggedin' in session and session.get('role') == 'Lifeguard':
+        lifeguard_id = session['user_id']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Check if the session is still without a lifeguard
+        cursor.execute('SELECT * FROM SessionsWithoutLifeguard WHERE session_id = %s', (session_id,))
+        session_data = cursor.fetchone()
+        
+        if session_data:
+            try:
+                # Assign the lifeguard to the session
+                cursor.execute('INSERT INTO guards (lifeguard_id, session_id) VALUES (%s, %s)', (lifeguard_id, session_id))
+                mysql.connection.commit()
+                flash(f'Successfully assigned to session ID {session_id}.', 'success')
+            except MySQLdb.IntegrityError:
+                mysql.connection.rollback()
+                flash('Failed to assign to session. It might have been assigned already.', 'danger')
+        else:
+            flash('Session not available for assignment.', 'warning')
+        
+        return redirect(url_for('lifeguard_homepage'))
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+
+@app.route('/drop_session_lifeguard/<int:session_id>', methods=['POST'])
+def drop_session_lifeguard(session_id):
+    if 'loggedin' in session and session.get('role') == 'Lifeguard':
+        lifeguard_id = session['user_id']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Check if the lifeguard is assigned to the session
+        cursor.execute('SELECT * FROM guards WHERE session_id = %s AND lifeguard_id = %s', (session_id, lifeguard_id))
+        assignment = cursor.fetchone()
+        
+        if assignment:
+            try:
+                # Remove the assignment
+                cursor.execute('DELETE FROM guards WHERE session_id = %s AND lifeguard_id = %s', (session_id, lifeguard_id))
+                mysql.connection.commit()
+                flash(f'Successfully dropped session ID {session_id}.', 'success')
+            except Exception as e:
+                mysql.connection.rollback()
+                flash(f'Error dropping session: {str(e)}', 'danger')
+        else:
+            flash('You are not assigned to this session.', 'warning')
+        
+        return redirect(url_for('lifeguard_homepage'))
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+    
+@app.route('/admin_homepage')
+def admin_homepage():
+    if 'loggedin' in session and session.get('role') == 'Admin':
+        forename = session.get('forename', 'Admin')
+        # Implement Admin-specific logic and render the admin_homepage.html
+        return render_template('admin_homepage.html', forename=forename)
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+@app.route('/coach_homepage')
+def coach_homepage():
+    if 'loggedin' in session and session.get('role') == 'Coach':
+        forename = session.get('forename', 'Coach')
+        # Implement Coach-specific logic and render the coach_homepage.html
+        return render_template('coach_homepage.html', forename=forename)
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+@app.route('/member_homepage')
+def member_homepage():
+    if 'loggedin' in session and session.get('role') == 'Member':
+        forename = session.get('forename', 'Member')
+        # Implement Member-specific logic and render the member_homepage.html
+        return render_template('member_homepage.html', forename=forename)
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
 
 # Route to display the form for creating a Lesson
 @app.route('/create_lesson', methods=['GET', 'POST'])
@@ -298,17 +416,17 @@ def create_one_to_one_training():
                   )
             """, (pool_id, lane_no, training_date, end_time, start_time, end_time, start_time, start_time, end_time))
             conflict = cursor.fetchone()
-            
+
             if conflict:
                 flash('Conflict detected: Another session overlaps with the selected time and lane.', 'danger')
                 return redirect(url_for('create_lesson'))
             
-            # Insert into session table
+            
             try:
                 cursor.execute('INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time) VALUES (%s, %s, %s, %s, %s, %s)',
                                (description, pool_id, lane_no, training_date, start_time, end_time))
                 mysql.connection.commit()
-                session_id = cursor.lastrowid  # Get the generated session_id
+                session_id = cursor.lastrowid  
             except Exception as e:
                 mysql.connection.rollback()
                 flash('Error creating session: {}'.format(str(e)), 'danger')

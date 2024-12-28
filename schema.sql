@@ -190,6 +190,20 @@ CREATE TABLE IF NOT EXISTS swimmerWaitQueue (
     FOREIGN KEY (lesson_id) REFERENCES waitQueue(lesson_id) ON DELETE CASCADE
 );
 
+-- Views
+CREATE VIEW SessionsWithoutLifeguard AS
+SELECT 
+    s.session_id, 
+    p.location AS pool_location, 
+    s.lane_no, 
+    s.date, 
+    s.start_time, 
+    s.end_time
+FROM session s
+JOIN pool p ON s.pool_id = p.pool_id
+LEFT JOIN guards g ON s.session_id = g.session_id
+WHERE g.lifeguard_id IS NULL;
+
 -- Mock Data
 -- 1. Insert Pools
 INSERT INTO pool (pool_id, location, chlorine_level) VALUES
@@ -260,3 +274,25 @@ INSERT INTO swimmer (user_id, swimming_level) VALUES
 (6, 'Advanced');
 INSERT INTO member (user_id, free_training_remaining) VALUES
 (6, 5);
+
+-- Insert Lessons (Session and Lesson Details)
+INSERT INTO session (session_id, description, pool_id, lane_no, date, start_time, end_time)
+VALUES
+(1, 'Beginner swimming lesson focused on freestyle basics', 1, 1, '2024-01-05', '10:00:00', '11:00:00'),
+(2, 'Advanced butterfly technique session', 1, 2, '2024-01-05', '11:30:00', '12:30:00');
+
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, lesson_type, isWomenSession)
+VALUES
+(1, 2, 5, 10, 'Group Lesson', FALSE),
+(2, 2, 4, 8, 'Group Lesson', TRUE);
+
+-- Insert One-to-One Training (Session and Training Details)
+INSERT INTO session (session_id, description, pool_id, lane_no, date, start_time, end_time)
+VALUES
+(3, 'Private training focused on backstroke improvement', 1, 3, '2024-01-05', '13:00:00', '14:00:00'),
+(4, 'One-to-one session to refine turns and finishes', 1, 4, '2024-01-05', '14:30:00', '15:30:00');
+
+INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style)
+VALUES
+(3, 2, 'Backstroke'),
+(4, 2, 'Freestyle');
