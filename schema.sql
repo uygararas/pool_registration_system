@@ -118,6 +118,7 @@ CREATE TABLE IF NOT EXISTS lesson (
     student_count INT NOT NULL,
     capacity INT NOT NULL,
     lesson_type VARCHAR(50) NOT NULL,
+    isWomenSession BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE,
     FOREIGN KEY (coach_id) REFERENCES coach(user_id) ON DELETE CASCADE
 );
