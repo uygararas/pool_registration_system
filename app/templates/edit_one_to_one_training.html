@@ -1,46 +1,47 @@
-<!-- templates/create_one_to_one_training.html -->
 {% extends "base.html" %}
 
-{% block title %}Create One-to-One Training{% endblock %}
+{% block title %}Edit One-to-One Training{% endblock %}
 
 {% block content %}
-<h2 class="mt-4">Create One-to-One Training</h2>
-<form method="POST" action="{{ url_for('create_one_to_one_training') }}">
+<h2 class="mt-4">Edit One-to-One Training</h2>
+<form method="POST" action="{{ url_for('edit_one_to_one_training', training_id=training.session_id) }}">
     <div class="form-group">
         <label for="description">Training Description:</label>
-        <textarea class="form-control" name="description" rows="4" required></textarea>
+        <textarea class="form-control" name="description" rows="4" required>{{ training.description }}</textarea>
     </div>
     <div class="form-group">
         <label for="training_date">Training Date:</label>
-        <input type="date" class="form-control" name="training_date" required>
+        <input type="date" class="form-control" name="training_date" value="{{ training.date }}" required>
     </div>
     <div class="form-group">
         <label for="start_time">Start Time:</label>
-        <input type="time" class="form-control" name="start_time" required>
+        <input type="time" class="form-control" name="start_time" value="{{ training.start_time }}" required>
     </div>
     <div class="form-group">
         <label for="end_time">End Time:</label>
-        <input type="time" class="form-control" name="end_time" required>
+        <input type="time" class="form-control" name="end_time" value="{{ training.end_time }}" required>
     </div>
     <div class="form-group">
         <label for="pool_id">Pool:</label>
         <select class="form-control" name="pool_id" id="pool_id" required onchange="updateLaneOptions()">
             {% for pool in pools %}
-                <option value="{{ pool.pool_id }}" data-lane-count="{{ pool.lane_count }}">{{ pool.location }}</option>
+                <option value="{{ pool.pool_id }}" data-lane-count="{{ pool.lane_count }}" {% if pool.pool_id == training.pool_id %}selected{% endif %}>
+                    {{ pool.location }}
+                </option>
             {% endfor %}
         </select>
     </div>
     <div class="form-group">
         <label for="lane_no">Lane Number:</label>
         <select class="form-control" name="lane_no" id="lane_no" required>
-            <!-- Lane options will be dynamically populated -->
+            <!-- Lane options dynamically populated -->
         </select>
     </div>
     <div class="form-group">
         <label for="swimming_style">Swimming Style:</label>
-        <input type="text" class="form-control" name="swimming_style" required>
+        <input type="text" class="form-control" name="swimming_style" value="{{ training.swimming_style }}" required>
     </div>
-    <button type="submit" class="btn btn-success">Publish Training</button>
+    <button type="submit" class="btn btn-primary">Save Changes</button>
     <a href="{{ url_for('homepage') }}" class="btn btn-secondary">Cancel</a>
 </form>
 
@@ -50,25 +51,16 @@
         const selectedOption = poolSelect.options[poolSelect.selectedIndex];
         const laneCount = parseInt(selectedOption.getAttribute('data-lane-count'), 10);
         const laneSelect = document.getElementById('lane_no');
-        const selectedLane = laneSelect.getAttribute('data-selected-lane');
-
-        // Clear existing options
+        const selectedLane = {{ training.lane_no|tojson }};
         laneSelect.innerHTML = '';
-
-        // Populate lane options
         for (let i = 1; i <= laneCount; i++) {
             const option = document.createElement('option');
             option.value = i;
             option.textContent = `Lane ${i}`;
-            if (selectedLane && parseInt(selectedLane) === i) {
-                option.selected = true;
-            }
+            if (i === selectedLane) option.selected = true;
             laneSelect.appendChild(option);
         }
     }
-
-    // Initialize lane options on page load
     document.addEventListener('DOMContentLoaded', updateLaneOptions);
 </script>
-
 {% endblock %}

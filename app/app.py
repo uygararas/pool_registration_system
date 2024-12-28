@@ -411,7 +411,7 @@ def create_lesson():
                 GROUP BY pool.pool_id, pool.location, pool.chlorine_level
             """)
             pools = cursor.fetchall()
-            return render_template('create_lesson.html', pools=pools)
+            return render_template('create_one_.html', pools=pools)
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
@@ -503,7 +503,7 @@ def create_one_to_one_training():
             pool_id = request.form['pool_id']
             lane_no = request.form['lane_no']
             swimming_style = request.form['swimming_style']
-            
+
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             
             # Validate Pool and Lane
@@ -520,46 +520,105 @@ def create_one_to_one_training():
 
             if conflict:
                 flash('Conflict detected: Another session overlaps with the selected time and lane.', 'danger')
-                return redirect(url_for('create_lesson'))
-            
+                return redirect(url_for('create_one_to_one_training'))
             
             try:
                 cursor.execute('INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time) VALUES (%s, %s, %s, %s, %s, %s)',
                                (description, pool_id, lane_no, training_date, start_time, end_time))
                 mysql.connection.commit()
-                session_id = cursor.lastrowid  
+                session_id = cursor.lastrowid
             except Exception as e:
                 mysql.connection.rollback()
-                flash('Error creating session: {}'.format(str(e)), 'danger')
+                flash(f'Error creating session: {str(e)}', 'danger')
                 return redirect(url_for('create_one_to_one_training'))
             
-            # Insert into oneToOneTraining table
+            # Insert into One-to-One Training table
             try:
                 coach_id = session['user_id']
                 cursor.execute('INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style) VALUES (%s, %s, %s)',
                                (session_id, coach_id, swimming_style))
                 mysql.connection.commit()
+                flash('One-to-One Training created successfully!', 'success')
+                return redirect(url_for('homepage'))
             except Exception as e:
                 mysql.connection.rollback()
-                flash('Error creating one-to-one training: {}'.format(str(e)), 'danger')
-                return redirect(url_for('create_one_to_one_training'))
-            
-            flash('One-to-One Training created and published successfully!', 'success')
-            return redirect(url_for('homepage'))
-        
+                flash(f'Error creating training: {str(e)}', 'danger')
         else:
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             cursor.execute("""
-                SELECT pool.pool_id, pool.location, pool.chlorine_level, COUNT(lane.lane_no) AS lane_count
+                SELECT pool.pool_id, pool.location, COUNT(lane.lane_no) AS lane_count
                 FROM pool
-                JOIN lane ON pool.pool_id = lane.pool_id
-                GROUP BY pool.pool_id, pool.location, pool.chlorine_level
+                LEFT JOIN lane ON pool.pool_id = lane.pool_id
+                GROUP BY pool.pool_id, pool.location
             """)
             pools = cursor.fetchall()
-            return render_template('create_lesson.html', pools=pools)
-    else:
-        flash('Unauthorized access!', 'danger')
-        return redirect(url_for('login'))
+            return render_template('create_one_to_one_training.html', pools=pools)
+    flash('Unauthorized access!', 'danger')
+    return redirect(url_for('login'))
+
+@app.route('/edit_one_to_one_training/<int:training_id>', methods=['GET', 'POST'])
+def edit_one_to_one_training(training_id):
+    if 'loggedin' in session and session.get('role') == 'Coach':
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        if request.method == 'POST':
+            description = request.form['description']
+            training_date = request.form['training_date']
+            start_time = request.form['start_time']
+            end_time = request.form['end_time']
+            pool_id = request.form['pool_id']
+            lane_no = request.form['lane_no']
+            swimming_style = request.form['swimming_style']
+            
+            try:
+                cursor.execute("""
+                    UPDATE session
+                    SET description = %s, date = %s, start_time = %s, end_time = %s, pool_id = %s, lane_no = %s
+                    WHERE session_id = %s
+                """, (description, training_date, start_time, end_time, pool_id, lane_no, training_id))
+                cursor.execute("""
+                    UPDATE oneToOneTraining
+                    SET swimming_style = %s
+                    WHERE session_id = %s
+                """, (swimming_style, training_id))
+                mysql.connection.commit()
+                flash('Training updated successfully!', 'success')
+                return redirect(url_for('homepage'))
+            except Exception as e:
+                mysql.connection.rollback()
+                flash(f'Error updating training: {str(e)}', 'danger')
+        else:
+            cursor.execute("""
+                SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, s.pool_id, s.lane_no, o.swimming_style
+                FROM session s
+                JOIN oneToOneTraining o ON s.session_id = o.session_id
+                WHERE s.session_id = %s
+            """, (training_id,))
+            training = cursor.fetchone()
+            
+            cursor.execute("""
+                SELECT pool.pool_id, pool.location, COUNT(lane.lane_no) AS lane_count
+                FROM pool
+                LEFT JOIN lane ON pool.pool_id = lane.pool_id
+                GROUP BY pool.pool_id, pool.location
+            """)
+            pools = cursor.fetchall()
+            return render_template('edit_one_to_one_training.html', training=training, pools=pools)
+    flash('Unauthorized access!', 'danger')
+    return redirect(url_for('login'))
+
+@app.route('/delete_one_to_one_training/<int:training_id>', methods=['POST'])
+def delete_one_to_one_training(training_id):
+    if 'loggedin' in session and session.get('role') == 'Coach':
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        try:
+            cursor.execute('DELETE FROM oneToOneTraining WHERE session_id = %s', (training_id,))
+            cursor.execute('DELETE FROM session WHERE session_id = %s', (training_id,))
+            mysql.connection.commit()
+            flash('Training deleted successfully!', 'success')
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f'Error deleting training: {str(e)}', 'danger')
+    return redirect(url_for('homepage'))
 
 
 if __name__ == '__main__':
