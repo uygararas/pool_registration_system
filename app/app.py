@@ -304,7 +304,7 @@ def swimmer_homepage():
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
     
-@app.route('/lessons')
+@app.route('/swimmer_lessons')
 def lessons():
     if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         forename = session.get('forename', 'Member')
@@ -476,7 +476,7 @@ def exit_lesson(session_id):
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
-@app.route('/free_session')
+@app.route('/swimmer_free_session')
 def free_session():
     if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         forename = session.get('forename', 'Member')
@@ -485,7 +485,7 @@ def free_session():
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
-@app.route('/one_to_one_training')
+@app.route('/swimmer_one_to_one_training')
 def one_to_one_training():
     if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         forename = session.get('forename', 'Member')
@@ -602,6 +602,7 @@ def create_lesson():
                 GROUP BY pool.pool_id, pool.location, pool.chlorine_level
             """)
             pools = cursor.fetchall()
+
             return render_template('create_one_.html', pools=pools)
     else:
         flash('Unauthorized access!', 'danger')
