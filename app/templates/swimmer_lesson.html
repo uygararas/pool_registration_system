@@ -11,7 +11,7 @@
     <!-- Filter Form -->
     <div class="filter-section">
         <h4>Filter Lessons</h4>
-        <form method="GET" action="{{ url_for('lessons') }}">
+        <form method="GET" action="{{ url_for('swimmer_lessons') }}">
             <div class="form-row">
                 <!-- Class Date -->
                 <div class="form-group col-md-3">
@@ -84,7 +84,7 @@
             </div>
             
             <button type="submit" class="btn btn-primary">Apply Filters</button>
-            <a href="{{ url_for('lessons') }}" class="btn btn-secondary">Reset Filters</a>
+            <a href="{{ url_for('swimmer_lessons') }}" class="btn btn-secondary">Reset Filters</a>
         </form>
     </div>
     

@@ -305,7 +305,7 @@ def swimmer_homepage():
         return redirect(url_for('login'))
     
 @app.route('/swimmer_lessons')
-def lessons():
+def swimmer_lessons():
     if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         forename = session.get('forename', 'Member')
         swimmer_id = session['user_id']
@@ -419,20 +419,50 @@ def enroll_lesson(session_id):
         
         if enrollment:
             flash('You are already enrolled in this lesson.', 'warning')
-            return redirect(url_for('lessons'))
+            return redirect(url_for('swimmer_lessons'))
         
-        # Check if the lesson is full
+        
+        cursor.execute('SELECT s.date, s.start_time, s.end_time FROM session s WHERE s.session_id = %s', (session_id,))
+        desired_session = cursor.fetchone()
+        
+        if not desired_session:
+            flash('Session not found.', 'danger')
+            return redirect(url_for('swimmer_lessons'))
+        
+        desired_date = desired_session['date']
+        desired_start = desired_session['start_time']
+        desired_end = desired_session['end_time']
+
+        # Fetch all sessions the swimmer is currently enrolled in
+        cursor.execute("""
+            SELECT s.date, s.start_time, s.end_time
+            FROM booking b
+            JOIN session s ON b.session_id = s.session_id
+            WHERE b.swimmer_id = %s
+        """, (swimmer_id,))
+        enrolled_sessions = cursor.fetchall()
+        
+        # Check for overlapping sessions
+        for sess in enrolled_sessions:
+            if sess['date'] != desired_date:
+                continue  # Different dates, no conflict
+            # Check if times overlap
+            if not (desired_end <= sess['start_time'] or desired_start >= sess['end_time']):
+                flash('Enrollment failed: You are already enrolled in another session that overlaps with this time slot.', 'danger')
+                return redirect(url_for('swimmer_lessons'))
+            
+        # Check if the restrictions are satisfied
         cursor.execute('SELECT capacity, student_count, session_type FROM lesson WHERE session_id = %s', (session_id,))
         lesson = cursor.fetchone()
 
         lesson_type = lesson['session_type']
         if (lesson_type == 'FemaleOnly' and user_gender != 'Female') or (lesson_type == 'MaleOnly' and user_gender != 'Male'):
             flash(f'This lesson is restricted to {lesson_type}. Your gender: {user_gender} does not match the requirement.', 'warning')
-            return redirect(url_for('lessons'))
+            return redirect(url_for('swimmer_lessons'))
         
         if lesson['student_count'] >= lesson['capacity']:
             flash('Cannot enroll: The lesson is full.', 'danger')
-            return redirect(url_for('lessons'))
+            return redirect(url_for('swimmer_lessons'))
         
         # Enroll the swimmer
         try:
@@ -443,7 +473,7 @@ def enroll_lesson(session_id):
             mysql.connection.rollback()
             flash(f'Error enrolling in lesson: {str(e)}', 'danger')
         
-        return redirect(url_for('lessons'))
+        return redirect(url_for('swimmer_lessons'))
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
@@ -460,7 +490,7 @@ def exit_lesson(session_id):
         
         if not enrollment:
             flash('You are not enrolled in this lesson.', 'warning')
-            return redirect(url_for('lessons'))
+            return redirect(url_for('swimmer_lessons'))
         
         # Exit the lesson
         try:
@@ -471,13 +501,13 @@ def exit_lesson(session_id):
             mysql.connection.rollback()
             flash(f'Error exiting lesson: {str(e)}', 'danger')
         
-        return redirect(url_for('lessons'))
+        return redirect(url_for('swimmer_lessons'))
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
 @app.route('/swimmer_free_session')
-def free_session():
+def swimmer_free_session():
     if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         forename = session.get('forename', 'Member')
         return render_template('swimmer_free_session.html', forename=forename)
@@ -486,7 +516,7 @@ def free_session():
         return redirect(url_for('login'))
 
 @app.route('/swimmer_one_to_one_training')
-def one_to_one_training():
+def swimmer_one_to_one_training():
     if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         forename = session.get('forename', 'Member')
         return render_template('swimmer_one_to_one_training.html', forename=forename)

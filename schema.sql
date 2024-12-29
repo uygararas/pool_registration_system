@@ -302,7 +302,7 @@ INSERT INTO member (user_id, free_training_remaining) VALUES
 -- Insert Sessions (3 in Pool 1 and 3 in Pool 2)
 INSERT INTO session (session_id, description, pool_id, lane_no, date, start_time, end_time) VALUES
 (1, 'Advanced swimming techniques', 1, 1, '2024-01-01', '09:00:00', '10:00:00'),
-(2, 'Beginner swimming lesson', 1, 2, '2024-01-02', '09:30:00', '11:00:00'),
+(2, 'Beginner swimming lesson', 1, 2, '2024-01-01', '09:30:00', '11:00:00'),
 (3, 'Intermediate butterfly technique', 1, 3, '2024-01-03', '11:00:00', '12:00:00'),
 (4, 'Personalized training for freestyle', 2, 1, '2024-01-04', '09:00:00', '10:00:00'),
 (5, 'One-to-one backstroke training', 2, 2, '2024-01-05', '10:00:00', '11:00:00'),
