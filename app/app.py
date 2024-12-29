@@ -371,7 +371,11 @@ def lessons():
                 l.capacity,
                 l.student_count,
                 c.forename AS coach_forename,
-                c.surname AS coach_surname
+                c.surname AS coach_surname,
+                EXISTS (
+                    SELECT 1 FROM booking b 
+                    WHERE b.session_id = s.session_id AND b.swimmer_id = %s
+                ) AS is_enrolled
             FROM session s
             JOIN pool p ON s.pool_id = p.pool_id
             JOIN lesson l ON s.session_id = l.session_id
@@ -379,7 +383,7 @@ def lessons():
             JOIN user c ON co.user_id = c.user_id
             WHERE 1=1
         """
-        params = []
+        params = [swimmer_id]
 
         # Apply filters if provided
         if class_date:
@@ -442,6 +446,68 @@ def lessons():
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
+@app.route('/enroll_lesson/<int:session_id>', methods=['POST'])
+def enroll_lesson(session_id):
+    if 'loggedin' in session and session.get('role') == 'Member':
+        swimmer_id = session['user_id']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Check if already enrolled
+        cursor.execute('SELECT * FROM booking WHERE swimmer_id = %s AND session_id = %s', (swimmer_id, session_id))
+        enrollment = cursor.fetchone()
+        
+        if enrollment:
+            flash('You are already enrolled in this lesson.', 'warning')
+            return redirect(url_for('lessons'))
+        
+        # Check if the lesson is full
+        cursor.execute('SELECT capacity, student_count FROM lesson WHERE session_id = %s', (session_id,))
+        lesson = cursor.fetchone()
+        if lesson['student_count'] >= lesson['capacity']:
+            flash('Cannot enroll: The lesson is full.', 'danger')
+            return redirect(url_for('lessons'))
+        
+        # Enroll the swimmer
+        try:
+            cursor.execute('INSERT INTO booking (swimmer_id, session_id) VALUES (%s, %s)', (swimmer_id, session_id))
+            mysql.connection.commit()
+            flash('Successfully enrolled in the lesson!', 'success')
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f'Error enrolling in lesson: {str(e)}', 'danger')
+        
+        return redirect(url_for('lessons'))
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+@app.route('/exit_lesson/<int:session_id>', methods=['POST'])
+def exit_lesson(session_id):
+    if 'loggedin' in session and session.get('role') == 'Member':
+        swimmer_id = session['user_id']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Check if enrolled
+        cursor.execute('SELECT * FROM booking WHERE swimmer_id = %s AND session_id = %s', (swimmer_id, session_id))
+        enrollment = cursor.fetchone()
+        
+        if not enrollment:
+            flash('You are not enrolled in this lesson.', 'warning')
+            return redirect(url_for('lessons'))
+        
+        # Exit the lesson
+        try:
+            cursor.execute('DELETE FROM booking WHERE swimmer_id = %s AND session_id = %s', (swimmer_id, session_id))
+            mysql.connection.commit()
+            flash('Successfully exited the lesson.', 'success')
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f'Error exiting lesson: {str(e)}', 'danger')
+        
+        return redirect(url_for('lessons'))
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
 
 @app.route('/free_session')
 def free_session():

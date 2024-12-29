@@ -204,6 +204,29 @@ JOIN pool p ON s.pool_id = p.pool_id
 LEFT JOIN guards g ON s.session_id = g.session_id
 WHERE g.lifeguard_id IS NULL;
 
+-- Trigger
+DELIMITER $$
+
+CREATE TRIGGER update_lesson_student_count_after_booking
+AFTER INSERT ON booking
+FOR EACH ROW
+BEGIN
+    UPDATE lesson
+    SET student_count = student_count + 1
+    WHERE session_id = NEW.session_id;
+END$$
+
+CREATE TRIGGER update_lesson_student_count_after_deletion
+AFTER DELETE ON booking
+FOR EACH ROW
+BEGIN
+    UPDATE lesson
+    SET student_count = student_count - 1
+    WHERE session_id = OLD.session_id;
+END$$
+
+DELIMITER ;
+
 -- Mock Data
 -- 1. Insert Pools
 INSERT INTO pool (pool_id, location, chlorine_level) VALUES
@@ -290,7 +313,7 @@ INSERT INTO session (session_id, description, pool_id, lane_no, date, start_time
 INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type) VALUES
 (1, 2, 10, 15, 'Mixed'),
 (2, 2, 8, 12, 'WomenOnly'),
-(6, 2, 12, 16, 'Mixed');
+(6, 2, 16, 16, 'Mixed');
 
 -- One-to-One Training sessions (Session IDs 3, 4, and 5)
 INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style) VALUES

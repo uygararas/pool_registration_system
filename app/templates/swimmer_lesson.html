@@ -105,7 +105,7 @@
                         <th>Capacity</th>
                         <th>Enrolled Students</th>
                         <th>Coach</th>
-                        <!-- Optional: Add actions like Booking -->
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -114,14 +114,26 @@
                             <td>{{ lesson.session_id }}</td>
                             <td>{{ lesson.description }}</td>
                             <td>{{ lesson.date.strftime('%Y-%m-%d') }}</td>
-                            <td>{{ lesson.start_time }}</td> <!-- Directly display formatted time -->
-                            <td>{{ lesson.end_time }}</td>     <!-- Directly display formatted time -->
+                            <td>{{ lesson.start_time }}</td>
+                            <td>{{ lesson.end_time }}</td>
                             <td>{{ lesson.pool_location }}</td>
                             <td>{{ lesson.session_type }}</td>
                             <td>{{ lesson.capacity }}</td>
-                            <td>{{ lesson.student_count }}</td> <!-- Display student count -->
+                            <td>{{ lesson.student_count }}</td>
                             <td>{{ lesson.coach_forename }} {{ lesson.coach_surname }}</td>
-                            <!-- Optional: Add actions like Booking -->
+                            <td>
+                                {% if lesson.is_enrolled %}
+                                    <form action="{{ url_for('exit_lesson', session_id=lesson.session_id) }}" method="post">
+                                        <button type="submit" class="btn btn-danger btn-sm">Exit</button>
+                                    </form>
+                                {% elif lesson.student_count >= lesson.capacity %}
+                                    <button type="button" class="btn btn-secondary btn-sm" disabled>Course is Full</button>
+                                {% else %}
+                                    <form action="{{ url_for('enroll_lesson', session_id=lesson.session_id) }}" method="post">
+                                        <button type="submit" class="btn btn-primary btn-sm">Enroll</button>
+                                    </form>
+                                {% endif %}
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
