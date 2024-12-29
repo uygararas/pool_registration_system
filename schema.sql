@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS session (
     date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
+    price DECIMAL(10,2) DEFAULT 42,
     FOREIGN KEY (pool_id, lane_no) REFERENCES lane(pool_id, lane_no) ON DELETE CASCADE
 );
 
@@ -91,6 +92,8 @@ CREATE TABLE IF NOT EXISTS session (
 CREATE TABLE IF NOT EXISTS booking (
     swimmer_id INT NOT NULL,
     session_id INT NOT NULL,
+    isCompleted BOOLEAN DEFAULT FALSE,
+    paymentMethod ENUM('CreditCard', 'Cash') DEFAULT 'Cash',
     PRIMARY KEY (swimmer_id, session_id),
     FOREIGN KEY (swimmer_id) REFERENCES swimmer(user_id) ON DELETE CASCADE,
     FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE
