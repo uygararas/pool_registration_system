@@ -130,8 +130,9 @@
                                 {% elif lesson.student_count >= lesson.capacity %}
                                     <button type="button" class="btn btn-secondary btn-sm" disabled>Course is Full</button>
                                 {% else %}
-                                    <!-- Updated Enroll Button -->
-                                    <a href="{{ url_for('swimmer_lesson_enroll_payment', session_id=lesson.session_id) }}" class="btn btn-primary btn-sm">Enroll</a>
+                                    <form action="{{ url_for('enroll_lesson', session_id=lesson.session_id) }}" method="post" style="display:inline;">
+                                        <button type="submit" class="btn btn-primary btn-sm">Enroll</button>
+                                    </form>
                                 {% endif %}
                             </td>
                         </tr>

@@ -3,51 +3,53 @@
 {% block content %}
   <h2>Enroll in Lesson - Payment</h2>
   
-  <form method="POST" action="{{ url_for('process_enrollment', session_id=session_id) }}">
+  <!-- Updated Payment Form -->
+  <form method="POST" action="{{ url_for('process_payment', session_id=session_id) }}">
     <div class="form-group">
-      <label for="payment_method">Select Payment Method:</label>
-      <select class="form-control" id="payment_method" name="payment_method" required onchange="toggleCreditCardForm()">
-        <option value="" disabled selected>Select a payment method</option>
-        <option value="CreditCard">Credit Card</option>
-        <option value="Cash">Cash</option>
-      </select>
+        <label for="payment_method">Select Payment Method:</label>
+        <select class="form-control" id="payment_method" name="payment_method" required onchange="toggleCreditCardForm()">
+            <option value="" disabled selected>Select a payment method</option>
+            <option value="CreditCard">Credit Card</option>
+            <option value="Cash">Cash</option>
+        </select>
     </div>
     
     <!-- Credit Card Details (Initially Hidden) -->
     <div id="credit_card_details" style="display: none;">
-      <h4>Credit Card Information</h4>
-      <div class="form-group">
-        <label for="card_number">Card Number:</label>
-        <input type="text" class="form-control" id="card_number" name="card_number" placeholder="Enter card number">
-      </div>
-      <div class="form-group">
-        <label for="card_holder">Card Holder Name:</label>
-        <input type="text" class="form-control" id="card_holder" name="card_holder" placeholder="Enter card holder name">
-      </div>
-      <div class="form-group">
-        <label for="expiry_date">Expiry Date:</label>
-        <input type="month" class="form-control" id="expiry_date" name="expiry_date">
-      </div>
-      <div class="form-group">
-        <label for="cvv">CVV:</label>
-        <input type="password" class="form-control" id="cvv" name="cvv" placeholder="Enter CVV">
-      </div>
+        <h4>Credit Card Information</h4>
+        <div class="form-group">
+            <label for="card_number">Card Number:</label>
+            <input type="text" class="form-control" id="card_number" name="card_number" placeholder="Enter card number">
+        </div>
+        <div class="form-group">
+            <label for="card_holder">Card Holder Name:</label>
+            <input type="text" class="form-control" id="card_holder" name="card_holder" placeholder="Enter card holder name">
+        </div>
+        <div class="form-group">
+            <label for="expiry_date">Expiry Date:</label>
+            <input type="month" class="form-control" id="expiry_date" name="expiry_date">
+        </div>
+        <div class="form-group">
+            <label for="cvv">CVV:</label>
+            <input type="password" class="form-control" id="cvv" name="cvv" placeholder="Enter CVV">
+        </div>
     </div>
     
-    <button type="submit" class="btn btn-success">Pay and Enroll</button>
-    <a href="{{ url_for('swimmer_lessons') }}" class="btn btn-danger">Cancel</a>
+    <button type="submit" class="btn btn-success">Pay</button>
+    <a href="{{ url_for('swimmer_homepage') }}" class="btn btn-danger">Cancel</a>
   </form>
-  
+
   <script>
     function toggleCreditCardForm() {
-      var paymentMethod = document.getElementById('payment_method').value;
-      var creditCardDetails = document.getElementById('credit_card_details');
-      
-      if (paymentMethod === 'CreditCard') {
-        creditCardDetails.style.display = 'block';
-      } else {
-        creditCardDetails.style.display = 'none';
-      }
+        var paymentMethod = document.getElementById('payment_method').value;
+        var creditCardDetails = document.getElementById('credit_card_details');
+        
+        if (paymentMethod === 'CreditCard') {
+            creditCardDetails.style.display = 'block';
+        } else {
+            creditCardDetails.style.display = 'none';
+        }
     }
   </script>
+
 {% endblock %}
