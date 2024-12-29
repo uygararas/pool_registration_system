@@ -15,38 +15,75 @@
     <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
   </div>
 
-  <!-- Booked Sessions Section -->
   <div class="booked-sessions mt-5">
-      <h3>Your Booked Sessions</h3>
-      {% if booked_sessions %}
-          <table class="table table-bordered">
-              <thead>
-                  <tr>
-                      <th>Session ID</th>
-                      <th>Session Type</th>
-                      <th>Description</th>
-                      <th>Date</th>
-                      <th>Start Time</th>
-                      <th>End Time</th>
-                      <th>Pool Location</th>
-                  </tr>
-              </thead>
-              <tbody>
-                  {% for session in booked_sessions %}
-                      <tr>
-                          <td>{{ session.session_id }}</td>
-                          <td>{{ session.session_type }}</td>
-                          <td>{{ session.description }}</td>
-                          <td>{{ session.date.strftime('%Y-%m-%d') }}</td>
-                          <td>{{ session.start_time }}</td>
-                          <td>{{ session.end_time }}</td>
-                          <td>{{ session.pool_location }}</td>
-                      </tr>
-                  {% endfor %}
-              </tbody>
-          </table>
-      {% else %}
-          <p>You have no booked sessions.</p>
-      {% endif %}
-  </div>
+    <h3>Upcoming Sessions</h3>
+    {% if upcoming_sessions %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Session ID</th>
+                    <th>Session Type</th>
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Pool Location</th>
+                    <th>IsPaymentCompleted</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in upcoming_sessions %}
+                    <tr>
+                        <td>{{ session.session_id }}</td>
+                        <td>{{ session.session_type }}</td>
+                        <td>{{ session.description }}</td>
+                        <td>{{ session.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ session.start_time }}</td>
+                        <td>{{ session.end_time }}</td>
+                        <td>{{ session.pool_location }}</td>
+                        <td>{{ "PaymentSuccessful" if session.isPaymentCompleted else "WaitingPayment" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have no upcoming sessions.</p>
+    {% endif %}
+</div>
+
+<div class="completed-sessions mt-5">
+    <h3>Completed Sessions</h3>
+    {% if completed_sessions %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Session ID</th>
+                    <th>Session Type</th>
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Pool Location</th>
+                    <th>IsPaymentCompleted</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in completed_sessions %}
+                    <tr>
+                        <td>{{ session.session_id }}</td>
+                        <td>{{ session.session_type }}</td>
+                        <td>{{ session.description }}</td>
+                        <td>{{ session.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ session.start_time }}</td>
+                        <td>{{ session.end_time }}</td>
+                        <td>{{ session.pool_location }}</td>
+                        <td>{{ "PaymentSuccessful" if session.isPaymentCompleted else "WaitingPayment" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have no completed sessions.</p>
+    {% endif %}
+</div>
 {% endblock %}

@@ -218,6 +218,8 @@ SELECT
     s.start_time, 
     s.end_time, 
     p.location AS pool_location,
+    b.isCompleted,
+    b.isPaymentCompleted,
     CASE 
         WHEN l.session_type IS NOT NULL THEN 'Lesson'
         WHEN fs.session_id IS NOT NULL THEN 'Free Training'

@@ -302,7 +302,7 @@ def swimmer_homepage():
         swimmer_id = session['user_id']
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         
-        # Fetch booked sessions from the view ordered by date and start_time ascending
+        # Fetch upcoming sessions
         cursor.execute("""
             SELECT 
                 session_id, 
@@ -311,17 +311,37 @@ def swimmer_homepage():
                 start_time, 
                 end_time, 
                 pool_location,
-                session_type
+                session_type,
+                isPaymentCompleted
             FROM swimmer_booked_sessions
-            WHERE swimmer_id = %s
+            WHERE swimmer_id = %s AND isCompleted = FALSE
             ORDER BY date ASC, start_time ASC
         """, (swimmer_id,))
-        booked_sessions = cursor.fetchall()
+        upcoming_sessions = cursor.fetchall()
+        
+        # Fetch completed sessions
+        cursor.execute("""
+            SELECT 
+                session_id, 
+                description, 
+                date, 
+                start_time, 
+                end_time, 
+                pool_location,
+                session_type,
+                isPaymentCompleted
+            FROM swimmer_booked_sessions
+            WHERE swimmer_id = %s AND isCompleted = TRUE
+            ORDER BY date DESC, start_time DESC
+        """, (swimmer_id,))
+        completed_sessions = cursor.fetchall()
+
         cursor.close()
         
         return render_template('swimmer_homepage.html', 
                                forename=forename, 
-                               booked_sessions=booked_sessions)
+                               upcoming_sessions=upcoming_sessions, 
+                               completed_sessions=completed_sessions)
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
