@@ -299,7 +299,29 @@ def drop_session_lifeguard(session_id):
 def swimmer_homepage():
     if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         forename = session.get('forename', 'DefaultForename')
-        return render_template('swimmer_homepage.html', forename=forename)
+        swimmer_id = session['user_id']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Fetch booked sessions from the view ordered by date and start_time ascending
+        cursor.execute("""
+            SELECT 
+                session_id, 
+                description, 
+                date, 
+                start_time, 
+                end_time, 
+                pool_location,
+                session_type
+            FROM swimmer_booked_sessions
+            WHERE swimmer_id = %s
+            ORDER BY date ASC, start_time ASC
+        """, (swimmer_id,))
+        booked_sessions = cursor.fetchall()
+        cursor.close()
+        
+        return render_template('swimmer_homepage.html', 
+                               forename=forename, 
+                               booked_sessions=booked_sessions)
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))

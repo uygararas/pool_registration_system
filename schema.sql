@@ -204,6 +204,29 @@ JOIN pool p ON s.pool_id = p.pool_id
 LEFT JOIN guards g ON s.session_id = g.session_id
 WHERE g.lifeguard_id IS NULL;
 
+
+CREATE VIEW swimmer_booked_sessions AS
+SELECT 
+    b.swimmer_id,
+    s.session_id, 
+    s.description, 
+    s.date, 
+    s.start_time, 
+    s.end_time, 
+    p.location AS pool_location,
+    CASE 
+        WHEN l.session_type IS NOT NULL THEN 'Lesson'
+        WHEN fs.session_id IS NOT NULL THEN 'Free Training'
+        WHEN ot.swimming_style IS NOT NULL THEN 'One-to-One Training'
+        ELSE 'Unknown'
+    END AS session_type
+FROM booking b
+JOIN session s ON b.session_id = s.session_id
+JOIN pool p ON s.pool_id = p.pool_id
+LEFT JOIN lesson l ON s.session_id = l.session_id
+LEFT JOIN freeSession fs ON s.session_id = fs.session_id
+LEFT JOIN oneToOneTraining ot ON s.session_id = ot.session_id;
+
 -- Trigger
 DELIMITER $$
 
