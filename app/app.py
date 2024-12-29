@@ -332,6 +332,7 @@ def swimmer_lessons():
         forename = session.get('forename', 'Member')
         swimmer_id = session['user_id']
 
+        # Retrieve filter parameters
         class_date = request.args.get('class_date')
         start_time = request.args.get('start_time')
         end_time = request.args.get('end_time')
@@ -341,6 +342,7 @@ def swimmer_lessons():
         min_capacity = request.args.get('min_capacity')
         max_capacity = request.args.get('max_capacity')
 
+        # Updated SQL query to include session price
         query = """
             SELECT 
                 s.session_id, 
@@ -352,6 +354,7 @@ def swimmer_lessons():
                 l.session_type,
                 l.capacity,
                 l.student_count,
+                s.price,
                 c.forename AS coach_forename,
                 c.surname AS coach_surname,
                 EXISTS (
@@ -427,6 +430,103 @@ def swimmer_lessons():
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
+
+@app.route('/swimmer_lesson_enroll_payment/<int:session_id>', methods=['GET'])
+def swimmer_lesson_enroll_payment(session_id):
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
+        return render_template('swimmer_lesson_enroll_payment.html', session_id=session_id)
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+
+@app.route('/process_enrollment/<int:session_id>', methods=['POST'])
+def process_enrollment(session_id):
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
+        swimmer_id = session['user_id']
+        user_gender = session['gender']
+        payment_method = request.form.get('payment_method')
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Validate payment method
+        if payment_method not in ['CreditCard', 'Cash']:
+            flash('Invalid payment method selected.', 'danger')
+            return redirect(url_for('swimmer_lesson_enroll_payment', session_id=session_id))
+        
+        # Check if already enrolled
+        cursor.execute('SELECT * FROM booking WHERE swimmer_id = %s AND session_id = %s', (swimmer_id, session_id))
+        enrollment = cursor.fetchone()
+        
+        if enrollment:
+            flash('You are already enrolled in this lesson.', 'warning')
+            return redirect(url_for('swimmer_lessons'))
+        
+        # Fetch desired session details
+        cursor.execute('SELECT s.date, s.start_time, s.end_time FROM session s WHERE s.session_id = %s', (session_id,))
+        desired_session = cursor.fetchone()
+        
+        if not desired_session:
+            flash('Session not found.', 'danger')
+            return redirect(url_for('swimmer_lessons'))
+        
+        desired_date = desired_session['date']
+        desired_start = desired_session['start_time']
+        desired_end = desired_session['end_time']
+
+        # Fetch all sessions the swimmer is currently enrolled in
+        cursor.execute("""
+            SELECT s.date, s.start_time, s.end_time
+            FROM booking b
+            JOIN session s ON b.session_id = s.session_id
+            WHERE b.swimmer_id = %s
+        """, (swimmer_id,))
+        enrolled_sessions = cursor.fetchall()
+        
+        # Check for overlapping sessions
+        for sess in enrolled_sessions:
+            if sess['date'] != desired_date:
+                continue  # Different dates, no conflict
+            # Check if times overlap
+            if not (desired_end <= sess['start_time'] or desired_start >= sess['end_time']):
+                flash('Enrollment failed: You are already enrolled in another session that overlaps with this time slot.', 'danger')
+                return redirect(url_for('swimmer_lessons'))
+            
+        # Check if the restrictions are satisfied
+        cursor.execute('SELECT capacity, student_count, session_type FROM lesson WHERE session_id = %s', (session_id,))
+        lesson = cursor.fetchone()
+
+        if not lesson:
+            flash('Lesson details not found.', 'danger')
+            return redirect(url_for('swimmer_lessons'))
+        
+        lesson_type = lesson['session_type']
+        if (lesson_type == 'FemaleOnly' and user_gender != 'Female') or (lesson_type == 'MaleOnly' and user_gender != 'Male'):
+            flash(f'This lesson is restricted to {lesson_type}. Your gender: {user_gender} does not match the requirement.', 'warning')
+            return redirect(url_for('swimmer_lessons'))
+        
+        if lesson['student_count'] >= lesson['capacity']:
+            flash('Cannot enroll: The lesson is full.', 'danger')
+            return redirect(url_for('swimmer_lessons'))
+        
+        # Determine payment completion status
+        is_payment_completed = True if payment_method == 'CreditCard' else False
+        
+        # Enroll the swimmer with the selected payment method
+        try:
+            cursor.execute('INSERT INTO booking (swimmer_id, session_id, paymentMethod, isPaymentCompleted) VALUES (%s, %s, %s, %s)',
+                           (swimmer_id, session_id, payment_method, is_payment_completed))
+            # student_count updated via trigger
+            mysql.connection.commit()
+            flash(f'Successfully enrolled in the lesson with {payment_method} payment!', 'success')
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f'Error enrolling in lesson: {str(e)}', 'danger')
+        
+        return redirect(url_for('swimmer_lessons'))
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+    
 
 @app.route('/enroll_lesson/<int:session_id>', methods=['POST'])
 def enroll_lesson(session_id):

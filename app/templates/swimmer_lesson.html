@@ -10,6 +10,7 @@
   
     <!-- Filter Form -->
     <div class="filter-section">
+        <!-- Existing filter form code -->
         <h4>Filter Lessons</h4>
         <form method="GET" action="{{ url_for('swimmer_lessons') }}">
             <div class="form-row">
@@ -70,17 +71,15 @@
                     </select>
                 </div>
                 
-                <!-- Duration (Removed) -->
-                <!-- Removed duration fields -->
-                 <!-- Class Capacity -->
+                <!-- Capacity Filters -->
                 <div class="form-group col-md-3">
-                  <label for="min_capacity">Min Capacity</label>
-                  <input type="number" class="form-control" id="min_capacity" name="min_capacity" min="0" value="{{ filters.get('min_capacity', '') }}">
-              </div>
-              <div class="form-group col-md-3">
-                  <label for="max_capacity">Max Capacity</label>
-                  <input type="number" class="form-control" id="max_capacity" name="max_capacity" min="0" value="{{ filters.get('max_capacity', '') }}">
-              </div>
+                    <label for="min_capacity">Min Capacity</label>
+                    <input type="number" class="form-control" id="min_capacity" name="min_capacity" min="0" value="{{ filters.get('min_capacity', '') }}">
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="max_capacity">Max Capacity</label>
+                    <input type="number" class="form-control" id="max_capacity" name="max_capacity" min="0" value="{{ filters.get('max_capacity', '') }}">
+                </div>
             </div>
             
             <button type="submit" class="btn btn-primary">Apply Filters</button>
@@ -104,6 +103,7 @@
                         <th>Class Type</th>
                         <th>Capacity</th>
                         <th>Enrolled Students</th>
+                        <th>Price</th> <!-- New Column -->
                         <th>Coach</th>
                         <th>Action</th>
                     </tr>
@@ -120,6 +120,7 @@
                             <td>{{ lesson.session_type }}</td>
                             <td>{{ lesson.capacity }}</td>
                             <td>{{ lesson.student_count }}</td>
+                            <td>${{ "%.2f"|format(lesson.price) }}</td> <!-- Display Price -->
                             <td>{{ lesson.coach_forename }} {{ lesson.coach_surname }}</td>
                             <td>
                                 {% if lesson.is_enrolled %}
@@ -129,9 +130,8 @@
                                 {% elif lesson.student_count >= lesson.capacity %}
                                     <button type="button" class="btn btn-secondary btn-sm" disabled>Course is Full</button>
                                 {% else %}
-                                    <form action="{{ url_for('enroll_lesson', session_id=lesson.session_id) }}" method="post">
-                                        <button type="submit" class="btn btn-primary btn-sm">Enroll</button>
-                                    </form>
+                                    <!-- Updated Enroll Button -->
+                                    <a href="{{ url_for('swimmer_lesson_enroll_payment', session_id=lesson.session_id) }}" class="btn btn-primary btn-sm">Enroll</a>
                                 {% endif %}
                             </td>
                         </tr>

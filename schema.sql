@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS booking (
     session_id INT NOT NULL,
     isCompleted BOOLEAN DEFAULT FALSE,
     paymentMethod ENUM('CreditCard', 'Cash') DEFAULT 'Cash',
+    isPaymentCompleted BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (swimmer_id, session_id),
     FOREIGN KEY (swimmer_id) REFERENCES swimmer(user_id) ON DELETE CASCADE,
     FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE
