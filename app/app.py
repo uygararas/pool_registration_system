@@ -39,7 +39,7 @@ def get_user_role(user_id):
         return 'Member'
     
     # Default role
-    return 'User'
+    return 'Swimmer'
 
 
 @app.route('/test')
@@ -185,21 +185,25 @@ def logout():
 @app.route('/homepage')
 def homepage():
     if 'loggedin' in session:
-        role = session.get('role', 'User')
+        role = session.get('role', 'Swimmer')
         if role == 'Admin':
             return redirect(url_for('admin_homepage'))
         elif role == 'Coach':
             return redirect(url_for('coach_homepage'))
         elif role == 'Lifeguard':
             return redirect(url_for('lifeguard_homepage'))
-        elif role == 'Member':
-            return redirect(url_for('member_homepage'))
+        elif role == 'Member' or role == 'Swimmer':
+            return redirect(url_for('swimmer_homepage'))
         else:
             forename = session.get('forename', 'User')
             return render_template('homepage.html', forename=forename)
 
     return redirect(url_for('login'))
 
+
+#################################################################
+#### LIFEGUARD FUNCTIONS ########################################
+#################################################################
 
 @app.route('/lifeguard_homepage')
 def lifeguard_homepage():
@@ -258,7 +262,6 @@ def assign_session(session_id):
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
-
 @app.route('/drop_session_lifeguard/<int:session_id>', methods=['POST'])
 def drop_session_lifeguard(session_id):
     if 'loggedin' in session and session.get('role') == 'Lifeguard':
@@ -285,70 +288,27 @@ def drop_session_lifeguard(session_id):
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
-    
-@app.route('/admin_homepage')
-def admin_homepage():
-    if 'loggedin' in session and session.get('role') == 'Admin':
-        forename = session.get('forename', 'Admin')
-        # Implement Admin-specific logic and render the admin_homepage.html
-        return render_template('admin_homepage.html', forename=forename)
-    else:
-        flash('Unauthorized access!', 'danger')
-        return redirect(url_for('login'))
+# end of lifeguard functions
 
-@app.route('/coach_homepage')
-def coach_homepage():
-    if 'loggedin' in session and session.get('role') == 'Coach':
-        forename = session.get('forename', 'Coach')
-        coach_id = session['user_id']
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+#################################################################
+#### SWIMMER/MEMBER FUNCTIONS ###################################
+#################################################################
 
-        # Fetch Lessons (General Classes)
-        cursor.execute("""
-            SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, 
-                   s.pool_id, s.lane_no, l.session_type
-            FROM lesson l
-            JOIN session s ON l.session_id = s.session_id
-            WHERE l.coach_id = %s
-        """, (coach_id,))
-        lessons = cursor.fetchall()
-
-        # Fetch One-to-One Trainings
-        cursor.execute("""
-            SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, 
-                   s.pool_id, s.lane_no, o.swimming_style
-            FROM oneToOneTraining o
-            JOIN session s ON o.session_id = s.session_id
-            WHERE o.coach_id = %s
-        """, (coach_id,))
-        one_to_one_trainings = cursor.fetchall()
-
-        return render_template(
-            'coach_homepage.html',
-            forename=forename,
-            lessons=lessons,
-            one_to_one_trainings=one_to_one_trainings
-        )
-    else:
-        flash('Unauthorized access!', 'danger')
-        return redirect(url_for('login'))
-
-@app.route('/member_homepage')
-def member_homepage():
-    if 'loggedin' in session and session.get('role') == 'Member':
-        forename = session.get('forename', 'Member')
-        return render_template('member_homepage.html', forename=forename)
+@app.route('/swimmer_homepage')
+def swimmer_homepage():
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
+        forename = session.get('forename', 'DefaultForename')
+        return render_template('swimmer_homepage.html', forename=forename)
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
     
 @app.route('/lessons')
 def lessons():
-    if 'loggedin' in session and session.get('role') == 'Member':
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         forename = session.get('forename', 'Member')
         swimmer_id = session['user_id']
 
-        # Initialize filter variables (same as original member_homepage)
         class_date = request.args.get('class_date')
         start_time = request.args.get('start_time')
         end_time = request.args.get('end_time')
@@ -358,7 +318,6 @@ def lessons():
         min_capacity = request.args.get('min_capacity')
         max_capacity = request.args.get('max_capacity')
 
-        # Build the SQL query (same as original member_homepage)
         query = """
             SELECT 
                 s.session_id, 
@@ -448,7 +407,7 @@ def lessons():
 
 @app.route('/enroll_lesson/<int:session_id>', methods=['POST'])
 def enroll_lesson(session_id):
-    if 'loggedin' in session and session.get('role') == 'Member':
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         swimmer_id = session['user_id']
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         
@@ -483,7 +442,7 @@ def enroll_lesson(session_id):
 
 @app.route('/exit_lesson/<int:session_id>', methods=['POST'])
 def exit_lesson(session_id):
-    if 'loggedin' in session and session.get('role') == 'Member':
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         swimmer_id = session['user_id']
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         
@@ -511,7 +470,7 @@ def exit_lesson(session_id):
 
 @app.route('/free_session')
 def free_session():
-    if 'loggedin' in session and session.get('role') == 'Member':
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         forename = session.get('forename', 'Member')
         return render_template('swimmer_free_session.html', forename=forename)
     else:
@@ -520,12 +479,55 @@ def free_session():
 
 @app.route('/one_to_one_training')
 def one_to_one_training():
-    if 'loggedin' in session and session.get('role') == 'Member':
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         forename = session.get('forename', 'Member')
         return render_template('swimmer_one_to_one_training.html', forename=forename)
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
+#end of swimmer/member functions
+
+#################################################################
+#### COACH FUNCTIONS ############################################
+#################################################################
+
+@app.route('/coach_homepage')
+def coach_homepage():
+    if 'loggedin' in session and session.get('role') == 'Coach':
+        forename = session.get('forename', 'Coach')
+        coach_id = session['user_id']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+        # Fetch Lessons (General Classes)
+        cursor.execute("""
+            SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, 
+                   s.pool_id, s.lane_no, l.session_type
+            FROM lesson l
+            JOIN session s ON l.session_id = s.session_id
+            WHERE l.coach_id = %s
+        """, (coach_id,))
+        lessons = cursor.fetchall()
+
+        # Fetch One-to-One Trainings
+        cursor.execute("""
+            SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, 
+                   s.pool_id, s.lane_no, o.swimming_style
+            FROM oneToOneTraining o
+            JOIN session s ON o.session_id = s.session_id
+            WHERE o.coach_id = %s
+        """, (coach_id,))
+        one_to_one_trainings = cursor.fetchall()
+
+        return render_template(
+            'coach_homepage.html',
+            forename=forename,
+            lessons=lessons,
+            one_to_one_trainings=one_to_one_trainings
+        )
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
 
 @app.route('/create_lesson', methods=['GET', 'POST'])
 def create_lesson():
@@ -798,7 +800,22 @@ def delete_one_to_one_training(training_id):
             mysql.connection.rollback()
             flash(f'Error deleting training: {str(e)}', 'danger')
     return redirect(url_for('homepage'))
+#end of coach functions
 
+#################################################################
+#### ADMIN FUNCTIONS ############################################
+#################################################################
+
+@app.route('/admin_homepage')
+def admin_homepage():
+    if 'loggedin' in session and session.get('role') == 'Admin':
+        forename = session.get('forename', 'Admin')
+        # Implement Admin-specific logic and render the admin_homepage.html
+        return render_template('admin_homepage.html', forename=forename)
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+#end of admin functions    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
