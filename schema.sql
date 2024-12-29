@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS lesson (
     coach_id INT NOT NULL,
     student_count INT NOT NULL ,
     capacity INT NOT NULL check(capacity >= student_count),
-    session_type ENUM('WomenOnly', 'MenOnly', 'Mixed') NOT NULL DEFAULT 'Mixed',
+    session_type ENUM('FemaleOnly', 'MaleOnly', 'Mixed') NOT NULL DEFAULT 'Mixed',
     FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE,
     FOREIGN KEY (coach_id) REFERENCES coach(user_id) ON DELETE CASCADE
 );
@@ -302,7 +302,7 @@ INSERT INTO member (user_id, free_training_remaining) VALUES
 -- Insert Sessions (3 in Pool 1 and 3 in Pool 2)
 INSERT INTO session (session_id, description, pool_id, lane_no, date, start_time, end_time) VALUES
 (1, 'Advanced swimming techniques', 1, 1, '2024-01-01', '09:00:00', '10:00:00'),
-(2, 'Beginner swimming lesson', 1, 2, '2024-01-02', '10:00:00', '11:00:00'),
+(2, 'Beginner swimming lesson', 1, 2, '2024-01-02', '09:30:00', '11:00:00'),
 (3, 'Intermediate butterfly technique', 1, 3, '2024-01-03', '11:00:00', '12:00:00'),
 (4, 'Personalized training for freestyle', 2, 1, '2024-01-04', '09:00:00', '10:00:00'),
 (5, 'One-to-one backstroke training', 2, 2, '2024-01-05', '10:00:00', '11:00:00'),
@@ -312,8 +312,8 @@ INSERT INTO session (session_id, description, pool_id, lane_no, date, start_time
 -- Lesson sessions (Session IDs 1, 2, and 6)
 INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type) VALUES
 (1, 2, 10, 15, 'Mixed'),
-(2, 2, 8, 12, 'WomenOnly'),
-(6, 2, 16, 16, 'Mixed');
+(2, 2, 8, 12, 'FemaleOnly'),
+(6, 2, 15, 16, 'MaleOnly');
 
 -- One-to-One Training sessions (Session IDs 3, 4, and 5)
 INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style) VALUES

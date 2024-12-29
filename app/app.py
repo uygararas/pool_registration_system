@@ -163,6 +163,7 @@ def login():
             session['email'] = account['email']
             session['forename'] = account['forename']
             session['surname'] = account['surname']
+            session['gender'] = account['gender']
             session['role'] = role  # Store role in session
             flash('Logged in successfully as {}!'.format(role), 'success')
             return redirect(url_for('homepage'))
@@ -409,6 +410,7 @@ def lessons():
 def enroll_lesson(session_id):
     if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         swimmer_id = session['user_id']
+        user_gender = session['gender']
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         
         # Check if already enrolled
@@ -420,8 +422,14 @@ def enroll_lesson(session_id):
             return redirect(url_for('lessons'))
         
         # Check if the lesson is full
-        cursor.execute('SELECT capacity, student_count FROM lesson WHERE session_id = %s', (session_id,))
+        cursor.execute('SELECT capacity, student_count, session_type FROM lesson WHERE session_id = %s', (session_id,))
         lesson = cursor.fetchone()
+
+        lesson_type = lesson['session_type']
+        if (lesson_type == 'FemaleOnly' and user_gender != 'Female') or (lesson_type == 'MaleOnly' and user_gender != 'Male'):
+            flash(f'This lesson is restricted to {lesson_type}. Your gender: {user_gender} does not match the requirement.', 'warning')
+            return redirect(url_for('lessons'))
+        
         if lesson['student_count'] >= lesson['capacity']:
             flash('Cannot enroll: The lesson is full.', 'danger')
             return redirect(url_for('lessons'))
