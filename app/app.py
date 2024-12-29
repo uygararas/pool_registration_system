@@ -147,7 +147,7 @@ def register():
 def login():
     if request.method == 'POST' and all(k in request.form for k in ['email', 'password']):
         email = request.form['email']
-        password = request.form['password']  # Plain text password
+        password = request.form['password'] 
         
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM user WHERE email = %s', (email,))
@@ -200,7 +200,7 @@ def homepage():
 
     return redirect(url_for('login'))
 
-# New Endpoint for Lifeguard Homepage
+
 @app.route('/lifeguard_homepage')
 def lifeguard_homepage():
     if 'loggedin' in session and session.get('role') == 'Lifeguard':
@@ -208,7 +208,6 @@ def lifeguard_homepage():
         lifeguard_id = session['user_id']
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         
-        # Fetch sessions without lifeguard
         # Fetch sessions without lifeguard, sorted by start_time ascending
         cursor.execute('SELECT * FROM SessionsWithoutLifeguard ORDER BY date ASC, start_time ASC')
         sessions_without_lifeguard = cursor.fetchall()
@@ -232,7 +231,6 @@ def lifeguard_homepage():
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
-# Route to handle assigning a session to a lifeguard
 @app.route('/assign_session/<int:session_id>', methods=['POST'])
 def assign_session(session_id):
     if 'loggedin' in session and session.get('role') == 'Lifeguard':
@@ -339,14 +337,130 @@ def coach_homepage():
 def member_homepage():
     if 'loggedin' in session and session.get('role') == 'Member':
         forename = session.get('forename', 'Member')
-        # Implement Member-specific logic and render the member_homepage.html
         return render_template('member_homepage.html', forename=forename)
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+    
+@app.route('/lessons')
+def lessons():
+    if 'loggedin' in session and session.get('role') == 'Member':
+        forename = session.get('forename', 'Member')
+        swimmer_id = session['user_id']
+
+        # Initialize filter variables (same as original member_homepage)
+        class_date = request.args.get('class_date')
+        start_time = request.args.get('start_time')
+        end_time = request.args.get('end_time')
+        pool_id = request.args.get('pool_id')
+        session_type = request.args.get('session_type')
+        coach_id = request.args.get('coach_id')
+        min_capacity = request.args.get('min_capacity')
+        max_capacity = request.args.get('max_capacity')
+
+        # Build the SQL query (same as original member_homepage)
+        query = """
+            SELECT 
+                s.session_id, 
+                s.description, 
+                s.date, 
+                s.start_time, 
+                s.end_time, 
+                p.location AS pool_location,
+                l.session_type,
+                l.capacity,
+                l.student_count,
+                c.forename AS coach_forename,
+                c.surname AS coach_surname
+            FROM session s
+            JOIN pool p ON s.pool_id = p.pool_id
+            JOIN lesson l ON s.session_id = l.session_id
+            JOIN coach co ON l.coach_id = co.user_id
+            JOIN user c ON co.user_id = c.user_id
+            WHERE 1=1
+        """
+        params = []
+
+        # Apply filters if provided
+        if class_date:
+            query += " AND s.date = %s"
+            params.append(class_date)
+        if start_time:
+            query += " AND s.start_time >= %s"
+            params.append(start_time)
+        if end_time:
+            query += " AND s.end_time <= %s"
+            params.append(end_time)
+        if pool_id and pool_id != 'All':
+            query += " AND p.pool_id = %s"
+            params.append(pool_id)
+        if session_type and session_type != 'All':
+            query += " AND l.session_type = %s"
+            params.append(session_type)
+        if coach_id and coach_id != 'All':
+            query += " AND co.user_id = %s"
+            params.append(coach_id)
+        if min_capacity:
+            query += " AND l.capacity >= %s"
+            params.append(min_capacity)
+        if max_capacity:
+            query += " AND l.capacity <= %s"
+            params.append(max_capacity)
+
+        query += " ORDER BY s.date ASC, s.start_time ASC"
+
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute(query, tuple(params))
+        lessons = cursor.fetchall()
+
+        # Fetch available pools for the filter dropdown
+        cursor.execute("SELECT pool_id, location FROM pool")
+        pools = cursor.fetchall()
+
+        # Fetch available coaches for the filter dropdown
+        cursor.execute("""
+            SELECT c.user_id, u.forename, u.surname 
+            FROM coach c
+            JOIN user u ON c.user_id = u.user_id
+        """)
+        coaches = cursor.fetchall()
+
+        # Fetch distinct session types
+        cursor.execute("SELECT DISTINCT session_type FROM lesson")
+        session_types = [row['session_type'] for row in cursor.fetchall()]
+
+        cursor.close()
+
+        return render_template('swimmer_lesson.html', 
+                               forename=forename, 
+                               lessons=lessons,
+                               pools=pools,
+                               coaches=coaches,
+                               session_types=session_types,
+                               filters=request.args)
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
 
-# Route to display the form for creating a Lesson
+@app.route('/free_session')
+def free_session():
+    if 'loggedin' in session and session.get('role') == 'Member':
+        forename = session.get('forename', 'Member')
+        return render_template('swimmer_free_session.html', forename=forename)
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+@app.route('/one_to_one_training')
+def one_to_one_training():
+    if 'loggedin' in session and session.get('role') == 'Member':
+        forename = session.get('forename', 'Member')
+        return render_template('swimmer_one_to_one_training.html', forename=forename)
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
 @app.route('/create_lesson', methods=['GET', 'POST'])
 def create_lesson():
     if 'loggedin' in session and session.get('role') == 'Coach':
@@ -429,7 +543,7 @@ def edit_lesson(lesson_id):
             end_time = request.form['end_time']
             pool_id = request.form['pool_id']
             lane_no = request.form['lane_no']
-            session_type = request.form['session_type']  # New field
+            session_type = request.form['session_type']
             
             try:
                 cursor.execute("""
@@ -492,7 +606,6 @@ def delete_lesson(lesson_id):
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
-# Route to display the form for creating a One-to-One Training
 @app.route('/create_one_to_one_training', methods=['GET', 'POST'])
 def create_one_to_one_training():
     if 'loggedin' in session and session.get('role') == 'Coach':
@@ -533,7 +646,6 @@ def create_one_to_one_training():
                 flash(f'Error creating session: {str(e)}', 'danger')
                 return redirect(url_for('create_one_to_one_training'))
             
-            # Insert into One-to-One Training table
             try:
                 coach_id = session['user_id']
                 cursor.execute('INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style) VALUES (%s, %s, %s)',

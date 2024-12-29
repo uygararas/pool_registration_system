@@ -1,0 +1,133 @@
+<!-- templates/member_homepage.html -->
+{% extends "base.html" %}
+
+{% block title %}Member Homepage{% endblock %}
+
+{% block content %}
+    <h2 class="mt-4">Welcome, Member {{ forename }}!</h2>
+    <p>This is the Member Dashboard.</p>
+    <a href="{{ url_for('logout') }}" class="btn btn-secondary mb-4">Logout</a>
+    
+    <!-- Filter Form -->
+    <div class="filter-section">
+        <h4>Filter Lessons</h4>
+        <form method="GET" action="{{ url_for('member_homepage') }}">
+            <div class="form-row">
+                <!-- Class Date -->
+                <div class="form-group col-md-3">
+                    <label for="class_date">Class Date</label>
+                    <input type="date" class="form-control" id="class_date" name="class_date" value="{{ filters.get('class_date', '') }}">
+                </div>
+                
+                <!-- Time Range -->
+                <div class="form-group col-md-3">
+                    <label for="start_time">Start Time After</label>
+                    <input type="time" class="form-control" id="start_time" name="start_time" value="{{ filters.get('start_time', '') }}">
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="end_time">End Time Before</label>
+                    <input type="time" class="form-control" id="end_time" name="end_time" value="{{ filters.get('end_time', '') }}">
+                </div>
+                
+                <!-- Pool Selection -->
+                <div class="form-group col-md-3">
+                    <label for="pool_id">Pool</label>
+                    <select class="form-control" id="pool_id" name="pool_id">
+                        <option value="All" {% if filters.get('pool_id') == 'All' or not filters.get('pool_id') %}selected{% endif %}>All Pools</option>
+                        {% for pool in pools %}
+                            <option value="{{ pool.pool_id }}" {% if filters.get('pool_id') == pool.pool_id|string %}selected{% endif %}>
+                                {{ pool.location }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <!-- Session Type (Class Type) -->
+                <div class="form-group col-md-3">
+                    <label for="session_type">Class Type</label>
+                    <select class="form-control" id="session_type" name="session_type">
+                        <option value="All" {% if filters.get('session_type') == 'All' or not filters.get('session_type') %}selected{% endif %}>All Types</option>
+                        {% for type in session_types %}
+                            <option value="{{ type }}" {% if filters.get('session_type') == type %}selected{% endif %}>
+                                {{ type }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Coach Selection -->
+                <div class="form-group col-md-3">
+                    <label for="coach_id">Coach</label>
+                    <select class="form-control" id="coach_id" name="coach_id">
+                        <option value="All" {% if filters.get('coach_id') == 'All' or not filters.get('coach_id') %}selected{% endif %}>All Coaches</option>
+                        {% for coach in coaches %}
+                            <option value="{{ coach.user_id }}" {% if filters.get('coach_id') == coach.user_id|string %}selected{% endif %}>
+                                {{ coach.forename }} {{ coach.surname }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Duration (Removed) -->
+                <!-- Removed duration fields -->
+                 <!-- Class Capacity -->
+                <div class="form-group col-md-3">
+                  <label for="min_capacity">Min Capacity</label>
+                  <input type="number" class="form-control" id="min_capacity" name="min_capacity" min="0" value="{{ filters.get('min_capacity', '') }}">
+              </div>
+              <div class="form-group col-md-3">
+                  <label for="max_capacity">Max Capacity</label>
+                  <input type="number" class="form-control" id="max_capacity" name="max_capacity" min="0" value="{{ filters.get('max_capacity', '') }}">
+              </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <a href="{{ url_for('member_homepage') }}" class="btn btn-secondary">Reset Filters</a>
+        </form>
+    </div>
+    
+    <!-- Lessons Table -->
+    <div class="lessons-table">
+        <h4>Available Lessons</h4>
+        {% if lessons %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Session ID</th>
+                        <th>Description</th>
+                        <th>Date</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Pool</th>
+                        <th>Class Type</th>
+                        <th>Capacity</th>
+                        <th>Enrolled Students</th>
+                        <th>Coach</th>
+                        <!-- Optional: Add actions like Booking -->
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lesson in lessons %}
+                        <tr>
+                            <td>{{ lesson.session_id }}</td>
+                            <td>{{ lesson.description }}</td>
+                            <td>{{ lesson.date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ lesson.start_time }}</td> <!-- Directly display formatted time -->
+                            <td>{{ lesson.end_time }}</td>     <!-- Directly display formatted time -->
+                            <td>{{ lesson.pool_location }}</td>
+                            <td>{{ lesson.session_type }}</td>
+                            <td>{{ lesson.capacity }}</td>
+                            <td>{{ lesson.student_count }}</td> <!-- Display student count -->
+                            <td>{{ lesson.coach_forename }} {{ lesson.coach_surname }}</td>
+                            <!-- Optional: Add actions like Booking -->
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No lessons found matching your criteria.</p>
+        {% endif %}
+    </div>
+{% endblock %}

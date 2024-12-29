@@ -115,8 +115,8 @@ CREATE TABLE IF NOT EXISTS freeSession (
 CREATE TABLE IF NOT EXISTS lesson (
     session_id INT PRIMARY KEY,
     coach_id INT NOT NULL,
-    student_count INT NOT NULL,
-    capacity INT NOT NULL,
+    student_count INT NOT NULL ,
+    capacity INT NOT NULL check(capacity >= student_count),
     session_type ENUM('WomenOnly', 'MenOnly', 'Mixed') NOT NULL DEFAULT 'Mixed',
     FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE,
     FOREIGN KEY (coach_id) REFERENCES coach(user_id) ON DELETE CASCADE

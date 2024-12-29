@@ -1,33 +1,12 @@
 <!-- templates/member_homepage.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Member Homepage</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-</head>
-<body>
-<div class="container">
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-    
-    <h2 class="mt-4">Welcome, Member {{ forename }}!</h2>
-    <p>This is the Member Dashboard.</p>
-    <!-- Add Member-specific functionalities here -->
-    <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
-</div>
+{% extends "base.html" %}
 
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% block content %}
+  <h2>Welcome, {{ forename }}!</h2>
+  
+  <div class="button-container">
+    <a href="{{ url_for('lessons') }}" class="btn btn-primary">Enroll Lesson</a>
+    <a href="{{ url_for('free_session') }}" class="btn btn-secondary">Book Free Session</a>
+    <a href="{{ url_for('one_to_one_training') }}" class="btn btn-success">Enroll One-to-One Training</a>
+  </div>
+{% endblock %}
