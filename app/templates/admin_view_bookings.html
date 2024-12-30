@@ -26,7 +26,6 @@
     <table class="table table-striped table-bordered">
         <thead class="thead-dark">
             <tr>
-                <th>Booking ID</th>
                 <th>Swimmer</th>
                 <th>Session</th>
                 <th>Payment Method</th>
@@ -37,16 +36,15 @@
         <tbody>
             {% for booking in bookings %}
             <tr>
-                <td>{{ booking.booking_id }}</td>
                 <td>{{ booking.swimmer_name }}</td>
                 <td>{{ booking.session_id }}</td>
                 <td>{{ booking.payment_method }}</td>
                 <td>{{ 'Yes' if booking.is_payment_completed else 'No' }}</td>
                 <td>
                     {% if not booking.is_payment_completed and booking.payment_method == "Cash" %}
-                    <form method="POST" action="{{ url_for('mark_payment', booking_id=booking.booking_id) }}">
-                        <button type="submit" class="btn btn-success btn-sm">Mark Payment Completed</button>
-                    </form>
+                    
+                        <button class="btn btn-success btn-sm">(TODO)Mark Payment Completed</button>
+                    
                     {% endif %}
                 </td>
             </tr>
