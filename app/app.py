@@ -1054,16 +1054,25 @@ def generate_report():
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
-# Admin: Mark Cash Payment Completed
-@app.route('/mark_payment/<int:booking_id>', methods=['POST'])
-def mark_payment(booking_id):
+# Admin: View All Bookings
+@app.route('/admin_view_bookings')
+def admin_view_bookings():
     if 'loggedin' in session and session.get('role') == 'Admin':
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('UPDATE booking SET is_payment_completed = TRUE WHERE booking_id = %s AND payment_method = "Cash"',
-                       (booking_id,))
-        mysql.connection.commit()
-        flash('Payment marked as completed.', 'success')
-        return redirect(url_for('admin_homepage'))
+        cursor.execute("""
+            SELECT 
+                b.swimmer_id,
+                u.forename AS swimmer_name,
+                b.session_id,
+                b.paymentMethod as payment_method,
+                b.isPaymentCompleted as is_payment_completed
+            FROM booking b
+            JOIN user u ON b.swimmer_id = u.user_id
+            ORDER BY b.session_id
+        """)
+        bookings = cursor.fetchall()
+        cursor.close()
+        return render_template('admin_view_bookings.html', bookings=bookings)
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
