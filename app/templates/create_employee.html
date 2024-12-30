@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Employee</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h2 class="mt-4">Create Coach or Lifeguard Account</h2>
+    <form method="POST" action="{{ url_for('create_employee') }}">
+        <!-- Role Selection -->
+        <div class="form-group">
+            <label for="role">Role</label>
+            <select id="role" name="role" class="form-control" required>
+                <option value="Coach">Coach</option>
+                <option value="Lifeguard">Lifeguard</option>
+            </select>
+        </div>
+
+        <!-- Common Fields -->
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="forename">Forename</label>
+            <input type="text" id="forename" name="forename" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="surname">Surname</label>
+            <input type="text" id="surname" name="surname" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="salary">Salary</label>
+            <input type="number" id="salary" name="salary" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="emp_date">Employment Date</label>
+            <input type="date" id="emp_date" name="emp_date" class="form-control" required>
+        </div>
+
+        <!-- Coach-Specific Fields -->
+        <div id="coach-fields" style="display:none;">
+            <div class="form-group">
+                <label for="rank">Rank</label>
+                <input type="text" id="rank" name="rank" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="specialization">Specialization</label>
+                <input type="text" id="specialization" name="specialization" class="form-control">
+            </div>
+        </div>
+
+        <!-- Lifeguard-Specific Fields -->
+        <div id="lifeguard-fields" style="display:none;">
+            <div class="form-group">
+                <label for="license_no">License Number</label>
+                <input type="text" id="license_no" name="license_no" class="form-control">
+            </div>
+        </div>
+
+        <!-- Submit and Navigation Buttons -->
+        <button type="submit" class="btn btn-primary">Create Account</button>
+        <a href="{{ url_for('admin_homepage') }}" class="btn btn-secondary">Back to Admin Dashboard</a>
+    </form>
+</div>
+
+<!-- JavaScript for Role-Based Field Toggle -->
+<script>
+    const roleField = document.getElementById('role');
+    const coachFields = document.getElementById('coach-fields');
+    const lifeguardFields = document.getElementById('lifeguard-fields');
+
+    roleField.addEventListener('change', () => {
+        if (roleField.value === 'Coach') {
+            coachFields.style.display = 'block';
+            lifeguardFields.style.display = 'none';
+        } else if (roleField.value === 'Lifeguard') {
+            lifeguardFields.style.display = 'block';
+            coachFields.style.display = 'none';
+        } else {
+            coachFields.style.display = 'none';
+            lifeguardFields.style.display = 'none';
+        }
+    });
+</script>
+</body>
+</html>

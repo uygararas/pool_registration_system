@@ -742,63 +742,6 @@ def create_lesson():
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
-@app.route('/edit_lesson/<int:lesson_id>', methods=['GET', 'POST'])
-def edit_lesson(lesson_id):
-    if 'loggedin' in session and session['role'] == 'Coach':
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        
-        if request.method == 'POST':
-            description = request.form['description']
-            date = request.form['class_date']
-            start_time = request.form['start_time']
-            end_time = request.form['end_time']
-            pool_id = request.form['pool_id']
-            lane_no = request.form['lane_no']
-            session_type = request.form['session_type']
-            
-            try:
-                cursor.execute("""
-                    UPDATE session
-                    SET description = %s, date = %s, start_time = %s, end_time = %s, pool_id = %s, lane_no = %s
-                    WHERE session_id = %s
-                """, (description, date, start_time, end_time, pool_id, lane_no, lesson_id))
-                cursor.execute("""
-                    UPDATE lesson
-                    SET session_type = %s
-                    WHERE session_id = %s
-                """, (session_type, lesson_id))
-                mysql.connection.commit()
-                flash('Lesson updated successfully!', 'success')
-                return redirect(url_for('homepage'))
-            except Exception as e:
-                mysql.connection.rollback()
-                flash(f'Error updating lesson: {str(e)}', 'danger')
-        else:
-            cursor.execute("""
-                SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, s.pool_id, s.lane_no, l.capacity, l.session_type
-                FROM session s
-                JOIN lesson l ON s.session_id = l.session_id
-                WHERE s.session_id = %s
-            """, (lesson_id,))
-            lesson = cursor.fetchone()
-            
-            if not lesson:
-                flash('Lesson not found!', 'danger')
-                return redirect(url_for('homepage'))
-            
-            cursor.execute("""
-                SELECT pool.pool_id, pool.location, COUNT(lane.lane_no) AS lane_count
-                FROM pool
-                LEFT JOIN lane ON pool.pool_id = lane.pool_id
-                GROUP BY pool.pool_id, pool.location
-            """)
-            pools = cursor.fetchall()
-            
-            return render_template('edit_lesson.html', lesson=lesson, pools=pools)
-    
-    flash('Unauthorized access!', 'danger')
-    return redirect(url_for('login'))
-
 @app.route('/delete_lesson/<int:lesson_id>', methods=['POST'])
 def delete_lesson(lesson_id):
     if 'loggedin' in session and session['role'] == 'Coach':
@@ -958,7 +901,283 @@ def admin_homepage():
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
-#end of admin functions    
+    
+    
+# Admin: Create Coach and Lifeguard Accounts
+@app.route('/create_employee', methods=['GET', 'POST'])
+def create_employee():
+    if 'loggedin' in session and session.get('role') == 'Admin':
+        cursor = None
+        if request.method == 'POST':
+            try:
+                # Add validation for required fields
+                required_fields = ['role', 'email', 'password', 'forename', 'surname', 'salary', 'emp_date']
+                if not all(field in request.form for field in required_fields):
+                    flash('All required fields must be filled out!', 'danger')
+                    return redirect(url_for('create_employee'))
+
+                role = request.form['role']
+                email = request.form['email']
+                password = request.form['password']
+                forename = request.form['forename']
+                surname = request.form['surname']
+                salary = request.form['salary']
+                emp_date = request.form['emp_date']
+
+                # Validate role-specific required fields
+                if role == 'Coach':
+                    if not all(field in request.form for field in ['rank', 'specialization']):
+                        flash('Rank and specialization are required for Coach!', 'danger')
+                        return redirect(url_for('create_employee'))
+                elif role == 'Lifeguard':
+                    if 'license_no' not in request.form:
+                        flash('License number is required for Lifeguard!', 'danger')
+                        return redirect(url_for('create_employee'))
+
+                cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+                # Check if email already exists
+                cursor.execute('SELECT * FROM user WHERE email = %s', (email,))
+                if cursor.fetchone():
+                    flash('Email already exists!', 'danger')
+                    return redirect(url_for('create_employee'))
+
+                # Insert into user table
+                cursor.execute(
+                    'INSERT INTO user (email, password, forename, surname, gender, birth_date) '
+                    'VALUES (%s, %s, %s, %s, %s, %s)',
+                    (email, password, forename, surname, 'Other', '2000-01-01')
+                )
+                mysql.connection.commit()
+
+                # Get the generated user ID
+                cursor.execute('SELECT LAST_INSERT_ID() as user_id')
+                user_id = cursor.fetchone()['user_id']
+
+                # Insert into employee table
+                cursor.execute(
+                    'INSERT INTO employee (user_id, salary, emp_date) VALUES (%s, %s, %s)',
+                    (user_id, salary, emp_date)
+                )
+                mysql.connection.commit()
+
+                # Insert into role-specific table
+                if role == 'Coach':
+                    rank = request.form['rank']
+                    specialization = request.form['specialization']
+                    cursor.execute(
+                        'INSERT INTO coach (user_id, rank, specialization) VALUES (%s, %s, %s)',
+                        (user_id, rank, specialization)
+                    )
+                elif role == 'Lifeguard':
+                    license_no = request.form['license_no']
+                    cursor.execute(
+                        'INSERT INTO lifeguard (user_id, license_no) VALUES (%s, %s)',
+                        (user_id, license_no)
+                    )
+
+                mysql.connection.commit()
+                flash(f'{role} account created successfully!', 'success')
+                return redirect(url_for('admin_homepage'))
+
+            except Exception as e:
+                # Handle errors and rollback changes
+                if cursor:
+                    mysql.connection.rollback()
+                print(f"Error details: {str(e)}")  # Add debug print
+                flash(f'Error creating {request.form.get("role", "employee")} account: {str(e)}', 'danger')
+            finally:
+                if cursor:
+                    cursor.close()
+
+        return render_template('create_employee.html')
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+@app.route('/generate_report')
+def generate_report():
+    if 'loggedin' in session and session.get('role') == 'Admin':
+        # Generate data for the report
+        cursor = mysql.connection.cursor()
+        
+        # Number of swimmers
+        cursor.execute("SELECT COUNT(*) FROM swimmer")
+        number_of_swimmer = cursor.fetchone()[0]
+        
+        # Number of lifeguards
+        cursor.execute("SELECT COUNT(*) FROM lifeguard")
+        number_of_lifeguard = cursor.fetchone()[0]
+        
+        # Most liked lesson
+        cursor.execute("""
+        SELECT l.session_type
+        FROM lesson l
+        JOIN lessonReview lr ON l.session_id = lr.lesson_id
+        JOIN review r ON lr.review_id = r.review_id
+        GROUP BY l.session_id
+        ORDER BY AVG(r.rating) DESC
+        LIMIT 1;
+        """)
+        most_liked_lesson = cursor.fetchone()
+        most_liked_lesson = most_liked_lesson[0] if most_liked_lesson else "No data"
+
+        # Most liked coach
+        cursor.execute("""
+        SELECT u.forename, u.surname
+        FROM user u
+        JOIN coachReview cr ON u.user_id = cr.coach_id
+        JOIN review r ON cr.review_id = r.review_id
+        GROUP BY u.user_id
+        ORDER BY AVG(r.rating) DESC
+        LIMIT 1
+        """)
+        most_liked_coach = cursor.fetchone()
+        most_liked_coach = f"{most_liked_coach[0]} {most_liked_coach[1]}" if most_liked_coach else "No data"
+
+        # Average queue length
+        cursor.execute("SELECT AVG(number_of_waiting) FROM waitQueue")
+        average_queue_length = cursor.fetchone()[0]
+        average_queue_length = round(average_queue_length, 2) if average_queue_length else 0
+
+        cursor.close()
+        
+        return render_template(
+            'generate_report.html',
+            number_of_swimmer=number_of_swimmer,
+            number_of_lifeguard=number_of_lifeguard,
+            most_liked_lesson=most_liked_lesson,
+            most_liked_coach=most_liked_coach,
+            average_queue_length=average_queue_length
+        )
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+# Admin: View All Bookings
+@app.route('/admin_view_bookings')
+def admin_view_bookings():
+    if 'loggedin' in session and session.get('role') == 'Admin':
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute("""
+            SELECT 
+                b.swimmer_id,
+                u.forename AS swimmer_name,
+                b.session_id,
+                b.paymentMethod as payment_method,
+                b.isPaymentCompleted as is_payment_completed
+            FROM booking b
+            JOIN user u ON b.swimmer_id = u.user_id
+            ORDER BY b.session_id
+        """)
+        bookings = cursor.fetchall()
+        cursor.close()
+        return render_template('admin_view_bookings.html', bookings=bookings)
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+# Admin: View All Users
+@app.route('/admin_view_users')
+def admin_view_users():
+    if 'loggedin' in session and session.get('role') == 'Admin':
+        cursor = mysql.connection.cursor()
+        try:
+            # SQL Query to fetch users and their roles
+            query = """
+            SELECT 
+                u.user_id,
+                SUBSTRING_INDEX(u.forename, '-', 1) AS forename,
+                u.surname,
+                CASE 
+                    WHEN c.user_id IS NOT NULL THEN 'Coach'
+                    WHEN l.user_id IS NOT NULL THEN 'Lifeguard'
+                    WHEN a.user_id IS NOT NULL THEN 'Admin'
+                    ELSE 'Swimmer'
+                END AS role
+            FROM user u
+            LEFT JOIN coach c ON u.user_id = c.user_id
+            LEFT JOIN lifeguard l ON u.user_id = l.user_id
+            LEFT JOIN pool_admin a ON u.user_id = a.user_id;
+            """
+            cursor.execute(query)
+            users = cursor.fetchall()
+
+            # Debug output to verify fetched data
+            print("Fetched Users:", users)
+
+        except Exception as e:
+            print("Error fetching users:", str(e))
+            flash("Error fetching user data.", "danger")
+            users = []
+        finally:
+            cursor.close()
+
+        # Render the template with fetched users
+        return render_template('admin_view_users.html', users=users)
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+@app.route('/edit_lesson/<int:lesson_id>', methods=['GET', 'POST'])
+def edit_lesson(lesson_id):
+    if 'loggedin' in session and session['role'] == 'Coach':
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        if request.method == 'POST':
+            description = request.form['description']
+            date = request.form['class_date']
+            start_time = request.form['start_time']
+            end_time = request.form['end_time']
+            pool_id = request.form['pool_id']
+            lane_no = request.form['lane_no']
+            session_type = request.form['session_type']
+            
+            try:
+                cursor.execute("""
+                    UPDATE session
+                    SET description = %s, date = %s, start_time = %s, end_time = %s, pool_id = %s, lane_no = %s
+                    WHERE session_id = %s
+                """, (description, date, start_time, end_time, pool_id, lane_no, lesson_id))
+                cursor.execute("""
+                    UPDATE lesson
+                    SET session_type = %s
+                    WHERE session_id = %s
+                """, (session_type, lesson_id))
+                mysql.connection.commit()
+                flash('Lesson updated successfully!', 'success')
+                return redirect(url_for('homepage'))
+            except Exception as e:
+                mysql.connection.rollback()
+                flash(f'Error updating lesson: {str(e)}', 'danger')
+        else:
+            cursor.execute("""
+                SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, s.pool_id, s.lane_no, l.capacity, l.session_type
+                FROM session s
+                JOIN lesson l ON s.session_id = l.session_id
+                WHERE s.session_id = %s
+            """, (lesson_id,))
+            lesson = cursor.fetchone()
+            
+            if not lesson:
+                flash('Lesson not found!', 'danger')
+                return redirect(url_for('homepage'))
+            
+            cursor.execute("""
+                SELECT pool.pool_id, pool.location, COUNT(lane.lane_no) AS lane_count
+                FROM pool
+                LEFT JOIN lane ON pool.pool_id = lane.pool_id
+                GROUP BY pool.pool_id, pool.location
+            """)
+            pools = cursor.fetchall()
+            
+            return render_template('edit_lesson.html', lesson=lesson, pools=pools)
+    
+    flash('Unauthorized access!', 'danger')
+    return redirect(url_for('login'))
+#end of admin functions   
+
+ 
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

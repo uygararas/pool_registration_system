@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>View All Bookings</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-4">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <h2 class="mt-4 mb-4 text-center">All Bookings</h2>
+
+    <!-- Bookings Table -->
+    <table class="table table-striped table-bordered">
+        <thead class="thead-dark">
+            <tr>
+                <th>Booking ID</th>
+                <th>Swimmer</th>
+                <th>Session</th>
+                <th>Payment Method</th>
+                <th>Payment Completed</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+            <tr>
+                <td>{{ booking.booking_id }}</td>
+                <td>{{ booking.swimmer_name }}</td>
+                <td>{{ booking.session_id }}</td>
+                <td>{{ booking.payment_method }}</td>
+                <td>{{ 'Yes' if booking.is_payment_completed else 'No' }}</td>
+                <td>
+                    {% if not booking.is_payment_completed and booking.payment_method == "Cash" %}
+                    <form method="POST" action="{{ url_for('mark_payment', booking_id=booking.booking_id) }}">
+                        <button type="submit" class="btn btn-success btn-sm">Mark Payment Completed</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Back Button -->
+    <a href="{{ url_for('admin_homepage') }}" class="btn btn-secondary btn-block mt-4">Back to Admin Dashboard</a>
+</div>
+
+<!-- Include jQuery and Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
