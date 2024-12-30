@@ -1,0 +1,18 @@
+<!-- app/templates/swimmer_review_coach.html -->
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Review Coach</h2>
+  <form method="POST" action="{{ url_for('review_coach', session_id=session_id) }}">
+    <div class="form-group">
+      <label for="comment">Your Review:</label>
+      <textarea class="form-control" id="comment" name="comment" rows="4" required></textarea>
+    </div>
+    <div class="form-group">
+      <label for="rating">Rating (0 to 5):</label>
+      <input type="number" class="form-control" id="rating" name="rating" min="0" max="5" step="0.1" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit Review</button>
+    <a href="{{ url_for('swimmer_homepage') }}" class="btn btn-secondary">Cancel</a>
+  </form>
+{% endblock %}

@@ -336,6 +336,52 @@ def swimmer_homepage():
         """, (swimmer_id,))
         completed_sessions = cursor.fetchall()
 
+        # Enhance completed_sessions with review flags
+        for session_item in completed_sessions:
+            session_id = session_item['session_id']
+            session_type = session_item['session_type']
+            
+            # Initialize flags
+            session_item['has_reviewed_coach'] = False
+            session_item['has_reviewed_lesson'] = False
+            
+            if session_type in ['Lesson', 'One-to-One Training']:
+                # Fetch coach_id for the session
+                if session_type == 'Lesson':
+                    cursor.execute("""
+                        SELECT coach_id FROM lesson WHERE session_id = %s
+                    """, (session_id,))
+                    coach = cursor.fetchone()
+                elif session_type == 'One-to-One Training':
+                    cursor.execute("""
+                        SELECT coach_id FROM oneToOneTraining WHERE session_id = %s
+                    """, (session_id,))
+                    coach = cursor.fetchone()
+                
+                coach_id = coach['coach_id'] if coach else None
+                
+                if coach_id:
+                    # Check if coach has been reviewed
+                    cursor.execute("""
+                        SELECT cr.review_id
+                        FROM coachReview cr
+                        JOIN review r ON cr.review_id = r.review_id
+                        WHERE cr.coach_id = %s AND r.user_id = %s
+                    """, (coach_id, swimmer_id))
+                    coach_review = cursor.fetchone()
+                    session_item['has_reviewed_coach'] = True if coach_review else False
+                
+                if session_type == 'Lesson':
+                    # Check if lesson has been reviewed
+                    cursor.execute("""
+                        SELECT lr.review_id
+                        FROM lessonReview lr
+                        JOIN review r ON lr.review_id = r.review_id
+                        WHERE lr.lesson_id = %s AND r.user_id = %s
+                    """, (session_id, swimmer_id))
+                    lesson_review = cursor.fetchone()
+                    session_item['has_reviewed_lesson'] = True if lesson_review else False
+
         cursor.close()
         
         return render_template('swimmer_homepage.html', 
@@ -345,6 +391,175 @@ def swimmer_homepage():
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
+    
+@app.route('/review_coach/<int:session_id>', methods=['GET', 'POST'])
+def review_coach(session_id):
+    if 'loggedin' not in session or session.get('role') not in ['Member', 'Swimmer']:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+    
+    swimmer_id = session['user_id']
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Verify participation
+    cursor.execute("""
+        SELECT s.session_type, l.coach_id
+        FROM swimmer_booked_sessions s
+        LEFT JOIN lesson l ON s.session_id = l.session_id
+        LEFT JOIN oneToOneTraining ot ON s.session_id = ot.session_id
+        WHERE s.session_id = %s AND s.swimmer_id = %s AND s.isCompleted = TRUE
+    """, (session_id, swimmer_id))
+    session_info = cursor.fetchone()
+    
+    if not session_info:
+        flash('Session not found or not completed.', 'danger')
+        cursor.close()
+        return redirect(url_for('swimmer_homepage'))
+    
+    coach_id = session_info.get('coach_id')
+    if not coach_id:
+        flash('Coach not found for this session.', 'danger')
+        cursor.close()
+        return redirect(url_for('swimmer_homepage'))
+    
+    # Check if already reviewed
+    cursor.execute("""
+        SELECT cr.review_id
+        FROM coachReview cr
+        JOIN review r ON cr.review_id = r.review_id
+        WHERE cr.coach_id = %s AND r.user_id = %s
+    """, (coach_id, swimmer_id))
+    existing_review = cursor.fetchone()
+    
+    if existing_review:
+        flash('You have already reviewed this coach for this session.', 'info')
+        cursor.close()
+        return redirect(url_for('swimmer_homepage'))
+    
+    if request.method == 'POST':
+        comment = request.form.get('comment')
+        rating = request.form.get('rating')
+        
+        # Input validation
+        if not comment or not rating:
+            flash('Please provide both comment and rating.', 'warning')
+            cursor.close()
+            return render_template('swimmer_review_coach.html', session_id=session_id)
+        
+        try:
+            rating = float(rating)
+            if rating < 0 or rating > 5:
+                raise ValueError
+        except ValueError:
+            flash('Rating must be a number between 0 and 5.', 'warning')
+            cursor.close()
+            return render_template('swimmer_review_coach.html', session_id=session_id)
+        
+        try:
+            # Insert into review table
+            cursor.execute("""
+                INSERT INTO review (user_id, comment, rating) VALUES (%s, %s, %s)
+            """, (swimmer_id, comment, rating))
+            review_id = cursor.lastrowid
+            
+            # Insert into coachReview table
+            cursor.execute("""
+                INSERT INTO coachReview (review_id, coach_id) VALUES (%s, %s)
+            """, (review_id, coach_id))
+            
+            mysql.connection.commit()
+            flash('Coach reviewed successfully!', 'success')
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f'Error submitting review: {str(e)}', 'danger')
+        finally:
+            cursor.close()
+        
+        return redirect(url_for('swimmer_homepage'))
+    
+    cursor.close()
+    return render_template('swimmer_review_coach.html', session_id=session_id)
+
+
+@app.route('/review_lesson/<int:session_id>', methods=['GET', 'POST'])
+def review_lesson(session_id):
+    if 'loggedin' not in session or session.get('role') not in ['Member', 'Swimmer']:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+    
+    swimmer_id = session['user_id']
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Verify participation
+    cursor.execute("""
+        SELECT session_type
+        FROM swimmer_booked_sessions
+        WHERE session_id = %s AND swimmer_id = %s AND isCompleted = TRUE
+    """, (session_id, swimmer_id))
+    session_info = cursor.fetchone()
+    
+    if not session_info or session_info['session_type'] != 'Lesson':
+        flash('Session not found, not completed, or not a lesson.', 'danger')
+        cursor.close()
+        return redirect(url_for('swimmer_homepage'))
+    
+    # Check if already reviewed
+    cursor.execute("""
+        SELECT lr.review_id
+        FROM lessonReview lr
+        JOIN review r ON lr.review_id = r.review_id
+        WHERE lr.lesson_id = %s AND r.user_id = %s
+    """, (session_id, swimmer_id))
+    existing_review = cursor.fetchone()
+    
+    if existing_review:
+        flash('You have already reviewed this lesson.', 'info')
+        cursor.close()
+        return redirect(url_for('swimmer_homepage'))
+    
+    if request.method == 'POST':
+        comment = request.form.get('comment')
+        rating = request.form.get('rating')
+        
+        # Input validation
+        if not comment or not rating:
+            flash('Please provide both comment and rating.', 'warning')
+            cursor.close()
+            return render_template('swimmer_review_lesson.html', session_id=session_id)
+        
+        try:
+            rating = float(rating)
+            if rating < 0 or rating > 5:
+                raise ValueError
+        except ValueError:
+            flash('Rating must be a number between 0 and 5.', 'warning')
+            cursor.close()
+            return render_template('swimmer_review_lesson.html', session_id=session_id)
+        
+        try:
+            # Insert into review table
+            cursor.execute("""
+                INSERT INTO review (user_id, comment, rating) VALUES (%s, %s, %s)
+            """, (swimmer_id, comment, rating))
+            review_id = cursor.lastrowid
+            
+            # Insert into lessonReview table
+            cursor.execute("""
+                INSERT INTO lessonReview (review_id, lesson_id) VALUES (%s, %s)
+            """, (review_id, session_id))
+            
+            mysql.connection.commit()
+            flash('Lesson reviewed successfully!', 'success')
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f'Error submitting review: {str(e)}', 'danger')
+        finally:
+            cursor.close()
+        
+        return redirect(url_for('swimmer_homepage'))
+    
+    cursor.close()
+    return render_template('swimmer_review_lesson.html', session_id=session_id)
     
 @app.route('/swimmer_lessons')
 def swimmer_lessons():
