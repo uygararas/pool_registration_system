@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Report</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h2 class="mt-4">Admin Report</h2>
+    <table class="table table-bordered">
+        <tr>
+            <th>Metric</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Number of Swimmers</td>
+            <td>{{ number_of_swimmer }}</td>
+        </tr>
+        <tr>
+            <td>Number of Lifeguards</td>
+            <td>{{ number_of_lifeguard }}</td>
+        </tr>
+        <tr>
+            <td>Most Liked Lesson</td>
+            <td>{{ most_liked_lesson }}</td>
+        </tr>
+        <tr>
+            <td>Most Liked Coach</td>
+            <td>{{ most_liked_coach }}</td>
+        </tr>
+        <tr>
+            <td>Average Queue Length</td>
+            <td>{{ average_queue_length }}</td>
+        </tr>
+    </table>
+    <a href="{{ url_for('admin_homepage') }}" class="btn btn-secondary">Back to Admin Dashboard</a>
+</div>
+</body>
+</html>
