@@ -566,6 +566,7 @@ def swimmer_lessons():
     if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         forename = session.get('forename', 'Member')
         swimmer_id = session['user_id']
+        role = session.get('role')
 
         # Retrieve filter parameters
         class_date = request.args.get('class_date')
@@ -652,6 +653,19 @@ def swimmer_lessons():
         # Fetch distinct session types
         cursor.execute("SELECT DISTINCT session_type FROM lesson")
         session_types = [row['session_type'] for row in cursor.fetchall()]
+
+        # Check if user is already in the queue for each lesson
+        for lesson in lessons:
+            # Check if user is in the queue
+            cursor.execute('SELECT * FROM swimmerWaitQueue WHERE swimmer_id = %s AND lesson_id = %s', (swimmer_id, lesson['session_id']))
+            queue = cursor.fetchone()
+            lesson['is_in_queue'] = True if queue else False
+
+            # Determine if the user can join the queue
+            if lesson['student_count'] >= lesson['capacity'] and role == 'Member':
+                lesson['can_join_queue'] = True
+            else:
+                lesson['can_join_queue'] = False
 
         cursor.close()
 
@@ -814,12 +828,95 @@ def exit_lesson(session_id):
         # Exit the lesson
         try:
             cursor.execute('DELETE FROM booking WHERE swimmer_id = %s AND session_id = %s', (swimmer_id, session_id))
+            
+            # Handle wait queue
+            cursor.execute("""
+                SELECT swimmer_id FROM swimmerWaitQueue
+                WHERE lesson_id = %s
+                ORDER BY request_date ASC
+                LIMIT 1
+            """, (session_id,))
+            next_swimmer = cursor.fetchone()
+            
+            if next_swimmer:
+                next_swimmer_id = next_swimmer['swimmer_id']
+                # Enroll the next swimmer
+                cursor.execute('INSERT INTO booking (swimmer_id, session_id, isCompleted, paymentMethod, isPaymentCompleted) VALUES (%s, %s, FALSE, "Cash", FALSE)', (next_swimmer_id, session_id))
+                # Remove from wait queue
+                cursor.execute('DELETE FROM swimmerWaitQueue WHERE swimmer_id = %s AND lesson_id = %s', (next_swimmer_id, session_id))
+                
             mysql.connection.commit()
             flash('Successfully exited the lesson.', 'success')
         except Exception as e:
             mysql.connection.rollback()
             flash(f'Error exiting lesson: {str(e)}', 'danger')
         
+        return redirect(url_for('swimmer_lessons'))
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+
+@app.route('/join_queue/<int:session_id>', methods=['POST'])
+def join_queue(session_id):
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
+        swimmer_id = session['user_id']
+        role = session.get('role')
+
+        if role != 'Member':
+            flash('Only members can join the queue.', 'warning')
+            return redirect(url_for('swimmer_lessons'))
+
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        try:
+            # Check if already in queue
+            cursor.execute('SELECT * FROM swimmerWaitQueue WHERE swimmer_id = %s AND lesson_id = %s', (swimmer_id, session_id))
+            if cursor.fetchone():
+                flash('You are already in the queue for this lesson.', 'info')
+                return redirect(url_for('swimmer_lessons'))
+
+            # Insert into swimmerWaitQueue
+            current_date = datetime.today().date()
+            cursor.execute('INSERT INTO swimmerWaitQueue (swimmer_id, lesson_id, request_date) VALUES (%s, %s, %s)', (swimmer_id, session_id, current_date))
+            mysql.connection.commit()
+            flash('Successfully joined the queue for the lesson.', 'success')
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f'Error joining queue: {str(e)}', 'danger')
+        finally:
+            cursor.close()
+        return redirect(url_for('swimmer_lessons'))
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+@app.route('/quit_queue/<int:session_id>', methods=['POST'])
+def quit_queue(session_id):
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
+        swimmer_id = session['user_id']
+        role = session.get('role')
+
+        if role != 'Member':
+            flash('Only members can quit the queue.', 'warning')
+            return redirect(url_for('swimmer_lessons'))
+
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        try:
+            # Check if in queue
+            cursor.execute('SELECT * FROM swimmerWaitQueue WHERE swimmer_id = %s AND lesson_id = %s', (swimmer_id, session_id))
+            if not cursor.fetchone():
+                flash('You are not in the queue for this lesson.', 'info')
+                return redirect(url_for('swimmer_lessons'))
+
+            # Delete from swimmerWaitQueue
+            cursor.execute('DELETE FROM swimmerWaitQueue WHERE swimmer_id = %s AND lesson_id = %s', (swimmer_id, session_id))
+            mysql.connection.commit()
+            flash('Successfully quit the queue for the lesson.', 'success')
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f'Error quitting queue: {str(e)}', 'danger')
+        finally:
+            cursor.close()
         return redirect(url_for('swimmer_lessons'))
     else:
         flash('Unauthorized access!', 'danger')

@@ -177,13 +177,6 @@ CREATE TABLE IF NOT EXISTS lessonReview (
     FOREIGN KEY (lesson_id) REFERENCES lesson(session_id) ON DELETE CASCADE
 );
 
--- 4.20 WaitingQueue Table
-CREATE TABLE IF NOT EXISTS waitQueue (
-    lesson_id INT PRIMARY KEY,
-    number_of_waiting INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (lesson_id) REFERENCES lesson(session_id) ON DELETE CASCADE
-);
-
 -- 4.21 SwimmerWaitQueue Table
 CREATE TABLE IF NOT EXISTS swimmerWaitQueue (
     swimmer_id INT NOT NULL,
@@ -191,7 +184,7 @@ CREATE TABLE IF NOT EXISTS swimmerWaitQueue (
     request_date DATE NOT NULL,
     PRIMARY KEY (swimmer_id, lesson_id),
     FOREIGN KEY (swimmer_id) REFERENCES member(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (lesson_id) REFERENCES waitQueue(lesson_id) ON DELETE CASCADE
+    FOREIGN KEY (lesson_id) REFERENCES lesson(session_id) ON DELETE CASCADE
 );
 
 -- Views
@@ -315,7 +308,7 @@ INSERT INTO employee (user_id, salary, emp_date) VALUES
 
 -- 3.5 Swimmer User
 INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
-(5, 'charlie-swimmer@example.com', 'password', 'Charlie-Swimmer', 'Miller', 'Other', '2000-06-20');
+(5, 'charlie-swimmer@example.com', 'password', 'Charlie-Swimmer', 'Miller', 'Male', '2000-06-20');
 INSERT INTO swimmer (user_id, swimming_level) VALUES
 (5, 'Intermediate');
 
@@ -326,6 +319,12 @@ INSERT INTO swimmer (user_id, swimming_level) VALUES
 (6, 'Advanced');
 INSERT INTO member (user_id, free_training_remaining) VALUES
 (6, 5);
+
+-- 3.7 Swimmer
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(7, 'emily-swimmer@example.com', 'password', 'Emily-Swimmer', 'Miller', 'Female', '2000-06-20');
+INSERT INTO swimmer (user_id, swimming_level) VALUES
+(7, 'Intermediate');
 
 -- Insert Lessons (Session and Lesson Details)
 -- Insert Sessions (3 in Pool 1 and 3 in Pool 2)
@@ -341,7 +340,7 @@ INSERT INTO session (session_id, description, pool_id, lane_no, date, start_time
 -- Lesson sessions (Session IDs 1, 2, and 6)
 INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type) VALUES
 (1, 2, 10, 15, 'Mixed'),
-(2, 2, 8, 12, 'FemaleOnly'),
+(2, 2, 11, 12, 'FemaleOnly'),
 (6, 2, 15, 16, 'MaleOnly');
 
 -- One-to-One Training sessions (Session IDs 3, 4, and 5)

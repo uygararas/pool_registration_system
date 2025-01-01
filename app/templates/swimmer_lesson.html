@@ -120,24 +120,34 @@
                             <td>{{ lesson.session_type }}</td>
                             <td>{{ lesson.capacity }}</td>
                             <td>{{ lesson.student_count }}</td>
-                            <td>${{ "%.2f"|format(lesson.price) }}</td> <!-- Display Price -->
+                            <td>${{ "%.2f"|format(lesson.price) }}</td>
                             <td>{{ lesson.coach_forename }} {{ lesson.coach_surname }}</td>
                             <td>
                                 {% if lesson.is_enrolled %}
                                     <form action="{{ url_for('exit_lesson', session_id=lesson.session_id) }}" method="post">
                                         <button type="submit" class="btn btn-danger btn-sm">Exit</button>
                                     </form>
-                                {% elif lesson.student_count >= lesson.capacity %}
-                                    <button type="button" class="btn btn-secondary btn-sm" disabled>Course is Full</button>
-                                {% else %}
-                                    <form action="{{ url_for('enroll_lesson', session_id=lesson.session_id) }}" method="post" style="display:inline;">
-                                        <button type="submit" class="btn btn-primary btn-sm">Enroll</button>
+                                    {% elif lesson.is_in_queue %}
+                                        <form action="{{ url_for('quit_queue', session_id=lesson.session_id) }}" method="post" style="display:inline;">
+                                            <button type="submit" class="btn btn-secondary btn-sm">Quit Queue</button>
+                                        </form>
+                                    {% elif lesson.can_join_queue %}
+                                    <form action="{{ url_for('join_queue', session_id=lesson.session_id) }}" method="post" style="display:inline;">
+                                        <button type="submit" class="btn btn-warning btn-sm">Join Queue</button>
                                     </form>
+                                {% else %}
+                                    {% if lesson.student_count < lesson.capacity %}
+                                        <form action="{{ url_for('enroll_lesson', session_id=lesson.session_id) }}" method="post" style="display:inline;">
+                                            <button type="submit" class="btn btn-primary btn-sm">Enroll</button>
+                                        </form>
+                                    {% else %}
+                                        <button type="button" class="btn btn-secondary btn-sm" disabled> Course is Full</button>
+                                    {% endif %}
                                 {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
-                </tbody>
+                </tbody>                
             </table>
         {% else %}
             <p>No lessons found matching your criteria.</p>
