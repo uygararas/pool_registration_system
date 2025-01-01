@@ -190,7 +190,8 @@ CREATE TABLE IF NOT EXISTS swimmerWaitQueue (
 -- Views
 CREATE VIEW SessionsWithoutLifeguard AS
 SELECT 
-    s.session_id, 
+    s.session_id,
+    s.description, 
     p.location AS pool_location, 
     s.lane_no, 
     s.date, 
