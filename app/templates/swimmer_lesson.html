@@ -59,6 +59,19 @@
                     {% endfor %}
                 </select>
             </div>
+
+            <div class="form-group">
+                <label for="session_type">Class Type</label>
+                <select class="form-control" id="session_type" name="session_type">
+                    <option value="All" {% if filters.get('session_type') == 'All' or not filters.get('session_type') %}selected{% endif %}>All Types</option>
+                    {% for session_type in session_types %}
+                    <option value="{{ session_type }}" {% if filters.get('session_type') == session_type %}selected{% endif %}>
+                        {{ session_type }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
             <div class="form-group">
                 <label for="min_capacity">Minimum Capacity</label>
                 <input type="number" class="form-control" id="min_capacity" name="min_capacity" value="{{ filters.get('min_capacity', '') }}" min="0">
