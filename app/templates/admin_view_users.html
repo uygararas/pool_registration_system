@@ -1,41 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>All Users</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-</head>
-<body>
-<div class="container mt-4">
-    <h2>All Users</h2>
-    <table class="table table-striped">
-        <thead>
+    <!-- Link to custom CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='admin_view_users.css') }}"
+    />
+  </head>
+  <body>
+    <div class="users-container">
+      <h1 class="title">All Users</h1>
+
+      <div class="table-container">
+        <table class="users-table">
+          <thead>
             <tr>
-                <th>User ID</th>
-                <th>Forename</th>
-                <th>Surname</th>
-                <th>Role</th>
+              <th>User ID</th>
+              <th>Forename</th>
+              <th>Surname</th>
+              <th>Role</th>
             </tr>
-        </thead>
-        <tbody>
-            {% if users %}
-                {% for user in users %}
-                    <tr>
-                        <td>{{ user[0] }}</td>
-                        <td>{{ user[1] }}</td>
-                        <td>{{ user[2] }}</td>
-                        <td>{{ user[3] }}</td>
-                    </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center">No users found.</td>
-                </tr>
+          </thead>
+          <tbody>
+            {% if users %} {% for user in users %}
+            <tr>
+              <td>{{ user[0] }}</td>
+              <td>{{ user[1] }}</td>
+              <td>{{ user[2] }}</td>
+              <td>{{ user[3] }}</td>
+            </tr>
+            {% endfor %} {% else %}
+            <tr>
+              <td colspan="4" class="no-data">No users found.</td>
+            </tr>
             {% endif %}
-        </tbody>
-    </table>
-    <a href="{{ url_for('admin_homepage') }}" class="btn btn-secondary">Back to Admin Dashboard</a>
-</div>
-</body>
+          </tbody>
+        </table>
+      </div>
+
+      <a href="{{ url_for('admin_homepage') }}" class="btn-back"
+        >Back to Admin Dashboard</a
+      >
+    </div>
+  </body>
 </html>

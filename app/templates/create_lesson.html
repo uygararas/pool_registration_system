@@ -1,76 +1,105 @@
-{% extends "base.html" %}
-
-{% block title %}Create Lesson{% endblock %}
-
-{% block content %}
-<h2 class="mt-4">Create Lesson</h2>
-<form method="POST" action="{{ url_for('create_lesson') }}">
-    <div class="form-group">
-        <label for="description">Course Description:</label>
-        <textarea class="form-control" name="description" rows="4" required></textarea>
-    </div>
-    <div class="form-group">
-        <label for="class_date">Class Date:</label>
-        <input type="date" class="form-control" name="class_date" required>
-    </div>
-    <div class="form-group">
-        <label for="start_time">Start Time:</label>
-        <input type="time" class="form-control" name="start_time" required>
-    </div>
-    <div class="form-group">
-        <label for="end_time">End Time:</label>
-        <input type="time" class="form-control" name="end_time" required>
-    </div>
-    <div class="form-group">
-        <label for="pool_id">Pool:</label>
-        <select class="form-control" name="pool_id" id="pool_id" required onchange="updateLaneOptions()">
-            {% for pool in pools %}
-                <option value="{{ pool.pool_id }}" data-lane-count="{{ pool.lane_count }}">{{ pool.location }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="lane_no">Lane Number:</label>
-        <select class="form-control" name="lane_no" id="lane_no" required>
-            <!-- Options will be dynamically populated -->
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="capacity">Capacity:</label>
-        <input type="number" class="form-control" name="capacity" min="1" required>
-    </div>
-    <div class="form-group">
-        <label for="session_type">Session Type:</label>
-        <select class="form-control" name="session_type" required>
-            <option value="Mixed" selected>Mixed</option>
-            <option value="WomenOnly">Women Only</option>
-            <option value="MenOnly">Men Only</option>
-        </select>
-    </div>
+{% extends "base.html" %} {% block title %}Create Lesson{% endblock %} {% block
+content %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='create_lesson.css') }}"
+/>
+<h2 class="mt-4 title">Create Lesson</h2>
+<form method="POST" action="{{ url_for('create_lesson') }}" class="edit-form">
+  <div class="form-group">
+    <label for="description">Course Description:</label>
+    <textarea
+      class="form-control"
+      name="description"
+      rows="4"
+      required
+    ></textarea>
+  </div>
+  <div class="form-group">
+    <label for="class_date">Class Date:</label>
+    <input type="date" class="form-control" name="class_date" required />
+  </div>
+  <div class="form-group">
+    <label for="start_time">Start Time:</label>
+    <input type="time" class="form-control" name="start_time" required />
+  </div>
+  <div class="form-group">
+    <label for="end_time">End Time:</label>
+    <input type="time" class="form-control" name="end_time" required />
+  </div>
+  <div class="form-group">
+    <label for="pool_id">Pool:</label>
+    <select
+      class="form-control"
+      name="pool_id"
+      id="pool_id"
+      required
+      onchange="updateLaneOptions()"
+    >
+      {% for pool in pools %}
+      <option
+        value="{{ pool.pool_id }}"
+        data-lane-count="{{ pool.lane_count }}"
+      >
+        {{ pool.location }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="lane_no">Lane Number:</label>
+    <select class="form-control" name="lane_no" id="lane_no" required>
+      <!-- Options will be dynamically populated -->
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="capacity">Capacity:</label>
+    <input
+      type="number"
+      class="form-control"
+      name="capacity"
+      min="1"
+      required
+    />
+  </div>
+  <div class="form-group">
+    <label for="session_type">Session Type:</label>
+    <select class="form-control" name="session_type" required>
+      <option value="Mixed" selected>Mixed</option>
+      <option value="WomenOnly">Women Only</option>
+      <option value="MenOnly">Men Only</option>
+    </select>
+  </div>
+  <div class="form-actions">
     <button type="submit" class="btn btn-primary">Publish Lesson</button>
     <a href="{{ url_for('homepage') }}" class="btn btn-secondary">Cancel</a>
+  </div>
 </form>
 
 <script>
-    function updateLaneOptions() {
-        const poolSelect = document.getElementById('pool_id');
-        const selectedOption = poolSelect.options[poolSelect.selectedIndex];
-        const laneCount = parseInt(selectedOption.getAttribute('data-lane-count'), 10);
-        const laneSelect = document.getElementById('lane_no');
+  function updateLaneOptions() {
+    const poolSelect = document.getElementById("pool_id");
+    const selectedOption = poolSelect.options[poolSelect.selectedIndex];
+    const laneCount = parseInt(
+      selectedOption.getAttribute("data-lane-count"),
+      10
+    );
+    const laneSelect = document.getElementById("lane_no");
 
-        // Clear existing options
-        laneSelect.innerHTML = '';
+    // Clear existing options
+    laneSelect.innerHTML = "";
 
-        // Populate lane options
-        for (let i = 1; i <= laneCount; i++) {
-            const option = document.createElement('option');
-            option.value = i;
-            option.textContent = `Lane ${i}`;
-            laneSelect.appendChild(option);
-        }
+    // Populate lane options dynamically
+    for (let i = 1; i <= laneCount; i++) {
+      const option = document.createElement("option");
+      option.value = i;
+      option.textContent = `Lane ${i}`;
+      laneSelect.appendChild(option);
     }
+  }
 
-    // Initialize lane options on page load
-    document.addEventListener('DOMContentLoaded', updateLaneOptions);
+  // Initialize lane options on page load
+  document.addEventListener("DOMContentLoaded", updateLaneOptions);
 </script>
+
 {% endblock %}

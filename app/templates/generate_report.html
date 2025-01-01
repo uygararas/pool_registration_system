@@ -1,39 +1,53 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Generate Report</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-</head>
-<body>
-<div class="container">
-    <h2 class="mt-4">Admin Report</h2>
-    <table class="table table-bordered">
+{% extends "base.html" %} {% block title %}Generate Report{% endblock %} {%
+block content %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='swimmer_review_coach.css') }}"
+/>
+
+<div class="report-container">
+  <!-- Title Section -->
+  <div class="title-section">
+    <h1 class="title">Admin Report</h1>
+  </div>
+
+  <!-- Report Table -->
+  <div class="table-container">
+    <table class="report-table">
+      <thead>
         <tr>
-            <th>Metric</th>
-            <th>Value</th>
+          <th>Metric</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Number of Swimmers</td>
+          <td>{{ number_of_swimmer }}</td>
         </tr>
         <tr>
-            <td>Number of Swimmers</td>
-            <td>{{ number_of_swimmer }}</td>
+          <td>Number of Lifeguards</td>
+          <td>{{ number_of_lifeguard }}</td>
         </tr>
         <tr>
-            <td>Number of Lifeguards</td>
-            <td>{{ number_of_lifeguard }}</td>
+          <td>Most Liked Lesson</td>
+          <td>{{ most_liked_lesson }}</td>
         </tr>
         <tr>
-            <td>Most Liked Lesson</td>
-            <td>{{ most_liked_lesson }}</td>
+          <td>Most Liked Coach</td>
+          <td>{{ most_liked_coach }}</td>
         </tr>
         <tr>
-            <td>Most Liked Coach</td>
-            <td>{{ most_liked_coach }}</td>
+          <td>Average Queue Length</td>
+          <td>{{ average_queue_length }}</td>
         </tr>
-        <tr>
-            <td>Average Queue Length</td>
-            <td>{{ average_queue_length }}</td>
-        </tr>
+      </tbody>
     </table>
-    <a href="{{ url_for('admin_homepage') }}" class="btn btn-secondary">Back to Admin Dashboard</a>
+  </div>
+
+  <!-- Back Button -->
+  <a href="{{ url_for('admin_homepage') }}" class="btn-secondary"
+    >Back to Admin Dashboard</a
+  >
 </div>
-</body>
-</html>
+{% endblock %}

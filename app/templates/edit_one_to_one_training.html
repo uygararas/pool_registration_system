@@ -3,8 +3,10 @@
 {% block title %}Edit One-to-One Training{% endblock %}
 
 {% block content %}
-<h2 class="mt-4">Edit One-to-One Training</h2>
-<form method="POST" action="{{ url_for('edit_one_to_one_training', training_id=training.session_id) }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='edit_one_to_one_training.css') }}">
+
+<h2 class="mt-4 title">Edit One-to-One Training</h2>
+<form method="POST" action="{{ url_for('edit_one_to_one_training', training_id=training.session_id) }}" class="edit-form">
     <div class="form-group">
         <label for="description">Training Description:</label>
         <textarea class="form-control" name="description" rows="4" required>{{ training.description }}</textarea>
@@ -41,8 +43,10 @@
         <label for="swimming_style">Swimming Style:</label>
         <input type="text" class="form-control" name="swimming_style" value="{{ training.swimming_style }}" required>
     </div>
-    <button type="submit" class="btn btn-primary">Save Changes</button>
-    <a href="{{ url_for('homepage') }}" class="btn btn-secondary">Cancel</a>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{{ url_for('homepage') }}" class="btn btn-secondary">Cancel</a>
+    </div>
 </form>
 
 <script>
