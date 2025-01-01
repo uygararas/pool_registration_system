@@ -25,67 +25,76 @@
     <div class="filter-form">
         <h2 class="section-title">Filter Lessons for Swimmer {{ forename }}!</h2>
         <form method="GET" action="{{ url_for('swimmer_lessons') }}">
-            <div class="form-group">
-                <label for="class_date">Class Date</label>
-                <input type="date" class="form-control" id="class_date" name="class_date" value="{{ filters.get('class_date', '') }}">
+            <!-- First Row of Filters -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="class_date">Class Date</label>
+                    <input type="date" class="form-control" id="class_date" name="class_date" value="{{ filters.get('class_date', '') }}">
+                </div>
+                <div class="form-group">
+                    <label for="start_time">Start Time After</label>
+                    <input type="time" class="form-control" id="start_time" name="start_time" value="{{ filters.get('start_time', '') }}">
+                </div>
+                <div class="form-group">
+                    <label for="end_time">End Time Before</label>
+                    <input type="time" class="form-control" id="end_time" name="end_time" value="{{ filters.get('end_time', '') }}">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="start_time">Start Time After</label>
-                <input type="time" class="form-control" id="start_time" name="start_time" value="{{ filters.get('start_time', '') }}">
+            <!-- Second Row of Filters -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="pool_id">Pool</label>
+                    <select class="form-control" id="pool_id" name="pool_id">
+                        <option value="All" {% if filters.get('pool_id') == 'All' or not filters.get('pool_id') %}selected{% endif %}>All Pools</option>
+                        {% for pool in pools %}
+                        <option value="{{ pool.pool_id }}" {% if filters.get('pool_id') == pool.pool_id|string %}selected{% endif %}>
+                            {{ pool.location }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="coach">Coach</label>
+                    <select class="form-control" id="coach" name="coach">
+                        <option value="All" {% if filters.get('coach') == 'All' or not filters.get('coach') %}selected{% endif %}>All Coaches</option>
+                        {% for coach in coaches %}
+                        <option value="{{ coach.coach_id }}" {% if filters.get('coach') == coach.coach_id|string %}selected{% endif %}>
+                            {{ coach.forename }} {{ coach.surname }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="session_type">Class Type</label>
+                    <select class="form-control" id="session_type" name="session_type">
+                        <option value="All" {% if filters.get('session_type') == 'All' or not filters.get('session_type') %}selected{% endif %}>All Types</option>
+                        {% for session_type in session_types %}
+                        <option value="{{ session_type }}" {% if filters.get('session_type') == session_type %}selected{% endif %}>
+                            {{ session_type }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="end_time">End Time Before</label>
-                <input type="time" class="form-control" id="end_time" name="end_time" value="{{ filters.get('end_time', '') }}">
+            <!-- Third Row of Filters -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="min_capacity">Minimum Capacity</label>
+                    <input type="number" class="form-control" id="min_capacity" name="min_capacity" value="{{ filters.get('min_capacity', '') }}" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="max_capacity">Maximum Capacity</label>
+                    <input type="number" class="form-control" id="max_capacity" name="max_capacity" value="{{ filters.get('max_capacity', '') }}" min="0">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="pool_id">Pool</label>
-                <select class="form-control" id="pool_id" name="pool_id">
-                    <option value="All" {% if filters.get('pool_id') == 'All' or not filters.get('pool_id') %}selected{% endif %}>All Pools</option>
-                    {% for pool in pools %}
-                    <option value="{{ pool.pool_id }}" {% if filters.get('pool_id') == pool.pool_id|string %}selected{% endif %}>
-                        {{ pool.location }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="coach">Coach</label>
-                <select class="form-control" id="coach" name="coach">
-                    <option value="All" {% if filters.get('coach') == 'All' or not filters.get('coach') %}selected{% endif %}>All Coaches</option>
-                    {% for coach in coaches %}
-                    <option value="{{ coach.coach_id }}" {% if filters.get('coach') == coach.coach_id|string %}selected{% endif %}>
-                        {{ coach.forename }} {{ coach.surname }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="session_type">Class Type</label>
-                <select class="form-control" id="session_type" name="session_type">
-                    <option value="All" {% if filters.get('session_type') == 'All' or not filters.get('session_type') %}selected{% endif %}>All Types</option>
-                    {% for session_type in session_types %}
-                    <option value="{{ session_type }}" {% if filters.get('session_type') == session_type %}selected{% endif %}>
-                        {{ session_type }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="min_capacity">Minimum Capacity</label>
-                <input type="number" class="form-control" id="min_capacity" name="min_capacity" value="{{ filters.get('min_capacity', '') }}" min="0">
-            </div>
-            <div class="form-group">
-                <label for="max_capacity">Maximum Capacity</label>
-                <input type="number" class="form-control" id="max_capacity" name="max_capacity" value="{{ filters.get('max_capacity', '') }}" min="0">
-            </div>
-            <div class="form-actions" style="display: flex; justify-content: center; gap: 10px;">
+            <!-- Action Buttons -->
+            <div class="form-actions">
                 <button type="submit" class="btn-primary">Apply Filters</button>
                 <a href="{{ url_for('swimmer_lessons') }}" class="btn-secondary">Reset Filters</a>
             </div>
         </form>
     </div>
+    
 
     <!-- Lessons Table -->
     <div class="lessons-section">

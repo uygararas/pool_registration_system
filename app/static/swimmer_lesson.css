@@ -132,3 +132,28 @@ body {
 .table tbody tr:hover {
     background-color: #f1f1f1;
 }
+
+/* Filter Form */
+.filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.filter-form .form-row {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.filter-form .form-row .form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-form .form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
