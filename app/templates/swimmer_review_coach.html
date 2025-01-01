@@ -1,18 +1,58 @@
 <!-- app/templates/swimmer_review_coach.html -->
-{% extends "base.html" %}
+{% extends "base.html" %} {% block title %}Review Coach{% endblock %} {% block
+content %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='swimmer_review_coach.css') }}"
+/>
 
-{% block content %}
-  <h2>Review Coach</h2>
-  <form method="POST" action="{{ url_for('review_coach', session_id=session_id) }}">
+<div class="review-container">
+  <!-- Title -->
+  <div class="title-section">
+    <h1 class="title">Review Coach</h1>
+  </div>
+
+  <!-- Review Form -->
+  <form
+    method="POST"
+    action="{{ url_for('review_coach', session_id=session_id) }}"
+    class="review-form"
+  >
+    <!-- Comment Section -->
     <div class="form-group">
-      <label for="comment">Your Review:</label>
-      <textarea class="form-control" id="comment" name="comment" rows="4" required></textarea>
+      <label for="comment" class="form-label">Your Review:</label>
+      <textarea
+        class="form-control"
+        id="comment"
+        name="comment"
+        rows="4"
+        placeholder="Write your review here..."
+        required
+      ></textarea>
     </div>
+
+    <!-- Rating Section -->
     <div class="form-group">
-      <label for="rating">Rating (0 to 5):</label>
-      <input type="number" class="form-control" id="rating" name="rating" min="0" max="5" step="0.1" required>
+      <label for="rating" class="form-label">Rating (0 to 5):</label>
+      <input
+        type="number"
+        class="form-control"
+        id="rating"
+        name="rating"
+        min="0"
+        max="5"
+        step="0.1"
+        required
+      />
     </div>
-    <button type="submit" class="btn btn-primary">Submit Review</button>
-    <a href="{{ url_for('swimmer_homepage') }}" class="btn btn-secondary">Cancel</a>
+
+    <!-- Action Buttons -->
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Submit Review</button>
+      <a href="{{ url_for('swimmer_homepage') }}" class="btn btn-secondary"
+        >Cancel</a
+      >
+    </div>
   </form>
+</div>
 {% endblock %}

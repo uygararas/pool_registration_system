@@ -1049,7 +1049,7 @@ def create_lesson():
             """)
             pools = cursor.fetchall()
 
-            return render_template('create_one_.html', pools=pools)
+            return render_template('create_lesson.html', pools=pools)
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))

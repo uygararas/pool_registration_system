@@ -1,63 +1,68 @@
 <!DOCTYPE html>
-<html>
-<head>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>View All Bookings</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-</head>
-<body>
-<div class="container mt-4">
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-        {% endfor %}
-    {% endif %}
-    {% endwith %}
+    <!-- Link to custom CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='admin_view_bookings.css') }}"
+    />
+  </head>
+  <body>
+    <div class="bookings-container">
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div class="flash-message alert-{{ category }}">
+        <span class="message-text">{{ message }}</span>
+        <span
+          class="close-btn"
+          onclick="this.parentElement.style.display='none';"
+          >&times;</span
+        >
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
 
-    <h2 class="mt-4 mb-4 text-center">All Bookings</h2>
+      <!-- Title -->
+      <h1 class="title">All Bookings</h1>
 
-    <!-- Bookings Table -->
-    <table class="table table-striped table-bordered">
-        <thead class="thead-dark">
+      <!-- Bookings Table -->
+      <div class="table-container">
+        <table class="bookings-table">
+          <thead>
             <tr>
-                <th>Swimmer</th>
-                <th>Session</th>
-                <th>Payment Method</th>
-                <th>Payment Completed</th>
-                <th>Action</th>
+              <th>Swimmer</th>
+              <th>Session</th>
+              <th>Payment Method</th>
+              <th>Payment Completed</th>
+              <th>Action</th>
             </tr>
-        </thead>
-        <tbody>
+          </thead>
+          <tbody>
             {% for booking in bookings %}
             <tr>
-                <td>{{ booking.swimmer_name }}</td>
-                <td>{{ booking.session_id }}</td>
-                <td>{{ booking.payment_method }}</td>
-                <td>{{ 'Yes' if booking.is_payment_completed else 'No' }}</td>
-                <td>
-                    {% if not booking.is_payment_completed and booking.payment_method == "Cash" %}
-                    
-                        <button class="btn btn-success btn-sm">(TODO)Mark Payment Completed</button>
-                    
-                    {% endif %}
-                </td>
+              <td>{{ booking.swimmer_name }}</td>
+              <td>{{ booking.session_id }}</td>
+              <td>{{ booking.payment_method }}</td>
+              <td>{{ 'Yes' if booking.is_payment_completed else 'No' }}</td>
+              <td>
+                {% if not booking.is_payment_completed and
+                booking.payment_method == "Cash" %}
+                <button class="btn-action">Mark Payment Completed</button>
+                {% endif %}
+              </td>
             </tr>
             {% endfor %}
-        </tbody>
-    </table>
+          </tbody>
+        </table>
+      </div>
 
-    <!-- Back Button -->
-    <a href="{{ url_for('admin_homepage') }}" class="btn btn-secondary btn-block mt-4">Back to Admin Dashboard</a>
-</div>
-
-<!-- Include jQuery and Bootstrap JS -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+      <!-- Back Button -->
+      <a href="{{ url_for('admin_homepage') }}" class="btn-back"
+        >Back to Admin Dashboard</a
+      >
+    </div>
+  </body>
 </html>

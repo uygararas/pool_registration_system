@@ -1,93 +1,107 @@
-<!-- templates/lifeguard_homepage.html -->
-{% extends "base.html" %}
+{% extends "base.html" %} {% block title %}Lifeguard Dashboard{% endblock %} {%
+block content %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='lifeguard_homepage.css') }}"
+/>
+<div class="lifeguard-container">
+  <!-- Welcome Section -->
+  <div class="welcome-section">
+    <h1 class="title">Welcome, Lifeguard {{ forename }}!</h1>
+    <p class="subtitle">This is your dashboard.</p>
+  </div>
 
-{% block title %}
-    Lifeguard Dashboard
-{% endblock %}
-
-{% block content %}
-    <h2 class="mt-4">Welcome, Lifeguard {{ forename }}!</h2>
-    <p>This is the Lifeguard Dashboard.</p>
-    
-
-     <!-- Assigned Sessions -->
-    <h3 class="mt-4">Your Assigned Sessions</h3>
+  <!-- Assigned Sessions -->
+  <div class="table-container">
+    <h2 class="section-title">Your Assigned Sessions</h2>
     {% if assigned_sessions %}
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Session ID</th>
-                    <th>Description</th>
-                    <th>Pool Location</th>
-                    <th>Lane No</th>
-                    <th>Date</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
-                    <th>Action</th> <!-- New Action Column -->
-                </tr>
-            </thead>
-            <tbody>
-                {% for session in assigned_sessions %}
-                <tr>
-                    <td>{{ session.session_id }}</td>
-                    <td>{{ session.description }}</td>
-                    <td>{{ session.pool_location }}</td>
-                    <td>{{ session.lane_no }}</td>
-                    <td>{{ session.date }}</td>
-                    <td>{{ session.start_time }}</td>
-                    <td>{{ session.end_time }}</td>
-                    <td>
-                        <form action="{{ url_for('drop_session_lifeguard', session_id=session.session_id) }}" method="post" style="display:inline;">
-                            <button type="submit" class="btn btn-danger btn-sm">Drop Session</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <table class="lifeguard-table">
+      <thead>
+        <tr>
+          <th>Session ID</th>
+          <th>Description</th>
+          <th>Pool Location</th>
+          <th>Lane No</th>
+          <th>Date</th>
+          <th>Start Time</th>
+          <th>End Time</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for session in assigned_sessions %}
+        <tr>
+          <td>{{ session.session_id }}</td>
+          <td>{{ session.description }}</td>
+          <td>{{ session.pool_location }}</td>
+          <td>{{ session.lane_no }}</td>
+          <td>{{ session.date }}</td>
+          <td>{{ session.start_time }}</td>
+          <td>{{ session.end_time }}</td>
+          <td>
+            <form
+              action="{{ url_for('drop_session_lifeguard', session_id=session.session_id) }}"
+              method="post"
+              class="inline-form"
+            >
+              <button type="submit" class="btn-danger">Drop Session</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
     {% else %}
-        <p>You have no assigned sessions.</p>
+    <p>No assigned sessions.</p>
     {% endif %}
+  </div>
 
-
-    <!-- Sessions Without a Lifeguard -->
-    <h3 class="mt-4">Sessions Without Lifeguard</h3>
+  <!-- Sessions Without a Lifeguard -->
+  <div class="table-container">
+    <h2 class="section-title">Sessions Without Lifeguard</h2>
     {% if sessions_without_lifeguard %}
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Session ID</th>
-                    <th>Description</th>
-                    <th>Pool Location</th>
-                    <th>Lane No</th>
-                    <th>Date</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for session in sessions_without_lifeguard %}
-                <tr>
-                    <td>{{ session.session_id }}</td>
-                    <td>{{ session.description }}</td>
-                    <td>{{ session.pool_location }}</td>
-                    <td>{{ session.lane_no }}</td>
-                    <td>{{ session.date }}</td>
-                    <td>{{ session.start_time }}</td>
-                    <td>{{ session.end_time }}</td>
-                    <td>
-                        <form action="{{ url_for('assign_session', session_id=session.session_id) }}" method="post" style="display:inline;">
-                            <button type="submit" class="btn btn-primary btn-sm">Assign to Me</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <table class="lifeguard-table">
+      <thead>
+        <tr>
+          <th>Session ID</th>
+          <th>Description</th>
+          <th>Pool Location</th>
+          <th>Lane No</th>
+          <th>Date</th>
+          <th>Start Time</th>
+          <th>End Time</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for session in sessions_without_lifeguard %}
+        <tr>
+          <td>{{ session.session_id }}</td>
+          <td>{{ session.description }}</td>
+          <td>{{ session.pool_location }}</td>
+          <td>{{ session.lane_no }}</td>
+          <td>{{ session.date }}</td>
+          <td>{{ session.start_time }}</td>
+          <td>{{ session.end_time }}</td>
+          <td>
+            <form
+              action="{{ url_for('assign_session', session_id=session.session_id) }}"
+              method="post"
+              class="inline-form"
+            >
+              <button type="submit" class="btn-success">Assign to Me</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
     {% else %}
-        <p>No available sessions without a lifeguard.</p>
+    <p>No available sessions without a lifeguard.</p>
     {% endif %}
-    
-    <a href="{{ url_for('logout') }}" class="btn btn-secondary mt-3">Logout</a>
+  </div>
+
+  <!-- Logout Button -->
+  <a href="{{ url_for('logout') }}" class="btn-secondary logout-btn">Logout</a>
+</div>
 {% endblock %}
