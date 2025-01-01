@@ -8,42 +8,49 @@ body {
 
 /* Lesson Container */
 .lesson-container {
-    max-width: 1200px; /* Increased width */
+    max-width: 1200px;
     margin: 50px auto;
     padding: 30px;
     background: #ffffff;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
     border-radius: 16px;
+    overflow: hidden;
 }
 
 /* Welcome Section */
-.welcome-section {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.welcome-section .title {
-    font-size: 28px;
+.welcome-section h1 {
+    font-size: 32px;
     font-weight: 700;
-    color: #3b82f6;
-    margin-bottom: 10px;
+    color: #333;
+    text-align: center;
 }
 
 .navigation-links {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.navigation-links a {
+    display: inline-block;
+    padding: 8px 16px; /* Reduced size */
+    font-size: 14px; /* Smaller font */
+    font-weight: bold;
+    color: white;
+    background-color: #6c757d;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background-color 0.3s;
+}
+
+.navigation-links a:hover {
+    background-color: #5a6268;
 }
 
 /* Filter Form */
-.filter-form {
-    margin: 30px 0;
-}
-
 .filter-form .section-title {
     font-size: 22px;
     font-weight: 600;
-    color: #333;
+    color: #3b82f6; /* Changed to blue */
     text-align: center;
     margin-bottom: 20px;
 }
@@ -53,34 +60,41 @@ body {
 }
 
 .form-actions {
-    text-align: center;
-    margin-top: 20px;
-}
-
-.form-actions .btn-primary, .btn-secondary {
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 8px;
-    text-decoration: none;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
 }
 
 .btn-primary {
     background-color: #007bff;
     color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background-color 0.3s, box-shadow 0.3s;
 }
 
 .btn-primary:hover {
     background-color: #0056b3;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .btn-secondary {
     background-color: #6c757d;
     color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background-color 0.3s, box-shadow 0.3s;
 }
 
 .btn-secondary:hover {
     background-color: #5a6268;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* Lessons Section */
@@ -88,15 +102,6 @@ body {
     margin-top: 30px;
 }
 
-.lessons-section .section-title {
-    font-size: 22px;
-    font-weight: 600;
-    color: #333;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-/* Table */
 .table-responsive {
     overflow-x: auto;
 }
@@ -126,47 +131,4 @@ body {
 
 .table tbody tr:hover {
     background-color: #f1f1f1;
-}
-
-/* Buttons */
-.btn-sm {
-    font-size: 12px;
-    padding: 5px 10px;
-    border-radius: 4px;
-    text-align: center;
-}
-
-.btn-warning {
-    background-color: #ffc107;
-    color: white;
-}
-
-.btn-warning:hover {
-    background-color: #e0a800;
-}
-
-.btn-danger {
-    background-color: #dc3545;
-    color: white;
-}
-
-.btn-danger:hover {
-    background-color: #c82333;
-}
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background-color: #5a6268;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .table th,
-    .table td {
-        font-size: 12px;
-    }
 }
