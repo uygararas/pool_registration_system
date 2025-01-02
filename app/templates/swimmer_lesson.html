@@ -9,28 +9,21 @@
   
     <!-- Filter Form -->
     <div class="filter-section">
-        <!-- Existing filter form code -->
         <h4>Filter Lessons</h4>
         <form method="GET" action="{{ url_for('swimmer_lessons') }}">
+            <!-- First Row: Description, Class Date, Pool -->
             <div class="form-row">
-                <!-- Class Date -->
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-4">
+                    <label for="description">Description</label>
+                    <input type="text" class="form-control" id="description" name="description" placeholder="Search by description" value="{{ filters.get('description', '') }}">
+                </div>
+                
+                <div class="form-group col-md-4">
                     <label for="class_date">Class Date</label>
                     <input type="date" class="form-control" id="class_date" name="class_date" value="{{ filters.get('class_date', '') }}">
                 </div>
                 
-                <!-- Time Range -->
-                <div class="form-group col-md-3">
-                    <label for="start_time">Start Time After</label>
-                    <input type="time" class="form-control" id="start_time" name="start_time" value="{{ filters.get('start_time', '') }}">
-                </div>
-                <div class="form-group col-md-3">
-                    <label for="end_time">End Time Before</label>
-                    <input type="time" class="form-control" id="end_time" name="end_time" value="{{ filters.get('end_time', '') }}">
-                </div>
-                
-                <!-- Pool Selection -->
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-4">
                     <label for="pool_id">Pool</label>
                     <select class="form-control" id="pool_id" name="pool_id">
                         <option value="All" {% if filters.get('pool_id') == 'All' or not filters.get('pool_id') %}selected{% endif %}>All Pools</option>
@@ -43,9 +36,19 @@
                 </div>
             </div>
             
+            <!-- Second Row: Start Time, End Time, Class Type -->
             <div class="form-row">
-                <!-- Session Type (Class Type) -->
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-4">
+                    <label for="start_time">Start Time After</label>
+                    <input type="time" class="form-control" id="start_time" name="start_time" value="{{ filters.get('start_time', '') }}">
+                </div>
+                
+                <div class="form-group col-md-4">
+                    <label for="end_time">End Time Before</label>
+                    <input type="time" class="form-control" id="end_time" name="end_time" value="{{ filters.get('end_time', '') }}">
+                </div>
+                
+                <div class="form-group col-md-4">
                     <label for="session_type">Class Type</label>
                     <select class="form-control" id="session_type" name="session_type">
                         <option value="All" {% if filters.get('session_type') == 'All' or not filters.get('session_type') %}selected{% endif %}>All Types</option>
@@ -56,9 +59,11 @@
                         {% endfor %}
                     </select>
                 </div>
-                
-                <!-- Coach Selection -->
-                <div class="form-group col-md-3">
+            </div>
+            
+            <!-- Third Row: Coach, Min Capacity, Max Capacity -->
+            <div class="form-row">
+                <div class="form-group col-md-4">
                     <label for="coach_id">Coach</label>
                     <select class="form-control" id="coach_id" name="coach_id">
                         <option value="All" {% if filters.get('coach_id') == 'All' or not filters.get('coach_id') %}selected{% endif %}>All Coaches</option>
@@ -70,12 +75,12 @@
                     </select>
                 </div>
                 
-                <!-- Capacity Filters -->
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-4">
                     <label for="min_capacity">Min Capacity</label>
                     <input type="number" class="form-control" id="min_capacity" name="min_capacity" min="0" value="{{ filters.get('min_capacity', '') }}">
                 </div>
-                <div class="form-group col-md-3">
+                
+                <div class="form-group col-md-4">
                     <label for="max_capacity">Max Capacity</label>
                     <input type="number" class="form-control" id="max_capacity" name="max_capacity" min="0" value="{{ filters.get('max_capacity', '') }}">
                 </div>
@@ -87,7 +92,7 @@
     </div>
     
     <!-- Lessons Table -->
-    <div class="lessons-table">
+    <div class="lessons-table mt-4">
         <h4>Available Lessons</h4>
         {% if lessons %}
             <table class="table table-striped">
@@ -126,11 +131,11 @@
                                     <form action="{{ url_for('exit_lesson', session_id=lesson.session_id) }}" method="post">
                                         <button type="submit" class="btn btn-danger btn-sm">Exit</button>
                                     </form>
-                                    {% elif lesson.is_in_queue %}
-                                        <form action="{{ url_for('quit_queue', session_id=lesson.session_id) }}" method="post" style="display:inline;">
-                                            <button type="submit" class="btn btn-secondary btn-sm">Quit Queue</button>
-                                        </form>
-                                    {% elif lesson.can_join_queue %}
+                                {% elif lesson.is_in_queue %}
+                                    <form action="{{ url_for('quit_queue', session_id=lesson.session_id) }}" method="post" style="display:inline;">
+                                        <button type="submit" class="btn btn-secondary btn-sm">Quit Queue</button>
+                                    </form>
+                                {% elif lesson.can_join_queue %}
                                     <form action="{{ url_for('join_queue', session_id=lesson.session_id) }}" method="post" style="display:inline;">
                                         <button type="submit" class="btn btn-warning btn-sm">Join Queue</button>
                                     </form>

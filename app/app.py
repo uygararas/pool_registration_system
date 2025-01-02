@@ -551,6 +551,9 @@ def swimmer_lessons():
         coach_id = request.args.get('coach_id')
         min_capacity = request.args.get('min_capacity')
         max_capacity = request.args.get('max_capacity')
+        
+        # NEW: Retrieve the description search term
+        description = request.args.get('description')
 
         # Updated SQL query to include session price
         query = """
@@ -605,6 +608,9 @@ def swimmer_lessons():
         if max_capacity:
             query += " AND l.capacity <= %s"
             params.append(max_capacity)
+        if description:
+            query += " AND s.description LIKE %s"
+            params.append(f"%{description}%")
 
         query += " ORDER BY s.date ASC, s.start_time ASC"
 
