@@ -1,10 +1,13 @@
-<!-- templates/login.html -->
 {% extends "base.html" %}
 
 {% block title %}Login{% endblock %}
 
 {% block content %}
-<h2 class="mt-4">Login</h2>
+<div class="text-center">
+    <!-- Logo -->
+    <img src="{{ url_for('static', filename='logo-2.png') }}" alt="Logo" style="width: 450px; height: auto;" class="mb-4">
+</div>
+
 <form method="POST" action="{{ url_for('login') }}">
     <div class="form-group">
         <label for="email">Email:</label>

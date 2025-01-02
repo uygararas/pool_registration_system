@@ -4,6 +4,12 @@
 {% block title %}Register{% endblock %}
 
 {% block content %}
+
+<div class="text-center">
+    <!-- Logo -->
+    <img src="{{ url_for('static', filename='logo-2.png') }}" alt="Logo" style="width: 300px; height: auto;" class="mb-4">
+</div>
+
 <h2 class="mt-4">Register</h2>
 <form method="POST" action="{{ url_for('register') }}">
     <!-- User Information -->
