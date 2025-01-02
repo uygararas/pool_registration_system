@@ -23,7 +23,8 @@
     </div>
     <div class="form-group">
         <label for="pool_id">Pool:</label>
-        <select class="form-control" name="pool_id" id="pool_id" required onchange="updateLaneOptions()">
+        <select class="form-control" name="pool_id" id="pool_id" required onchange="updateLaneOptions()"
+            data-selected-lane="{{ training.lane_no }}">
             {% for pool in pools %}
                 <option value="{{ pool.pool_id }}" data-lane-count="{{ pool.lane_count }}" {% if pool.pool_id == training.pool_id %}selected{% endif %}>
                     {{ pool.location }}
@@ -34,12 +35,16 @@
     <div class="form-group">
         <label for="lane_no">Lane Number:</label>
         <select class="form-control" name="lane_no" id="lane_no" required>
-            <!-- Lane options dynamically populated -->
+            <!-- Lane options will be dynamically populated -->
         </select>
     </div>
     <div class="form-group">
         <label for="swimming_style">Swimming Style:</label>
         <input type="text" class="form-control" name="swimming_style" value="{{ training.swimming_style }}" required>
+    </div>
+    <div class="form-group">
+        <label for="price">Price:</label>
+        <input type="number" step="0.01" class="form-control" name="price" value="{{ training.price }}" min="0" required>
     </div>
     <button type="submit" class="btn btn-primary">Save Changes</button>
     <a href="{{ url_for('homepage') }}" class="btn btn-secondary">Cancel</a>
@@ -50,17 +55,25 @@
         const poolSelect = document.getElementById('pool_id');
         const selectedOption = poolSelect.options[poolSelect.selectedIndex];
         const laneCount = parseInt(selectedOption.getAttribute('data-lane-count'), 10);
+        const selectedLane = parseInt(document.getElementById('pool_id').getAttribute('data-selected-lane'), 10);
         const laneSelect = document.getElementById('lane_no');
-        const selectedLane = {{ training.lane_no|tojson }};
+
+        // Clear existing options
         laneSelect.innerHTML = '';
+
+        // Populate lane options
         for (let i = 1; i <= laneCount; i++) {
             const option = document.createElement('option');
             option.value = i;
             option.textContent = `Lane ${i}`;
-            if (i === selectedLane) option.selected = true;
+            if (i === selectedLane) {
+                option.selected = true;
+            }
             laneSelect.appendChild(option);
         }
     }
+
+    // Initialize lane options on page load
     document.addEventListener('DOMContentLoaded', updateLaneOptions);
 </script>
 {% endblock %}

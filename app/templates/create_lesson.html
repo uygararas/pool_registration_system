@@ -47,6 +47,10 @@
             <option value="MenOnly">Men Only</option>
         </select>
     </div>
+    <div class="form-group">
+        <label for="price">Price:</label>
+        <input type="number" step="0.01" class="form-control" name="price" min="0" required>
+    </div>
     <button type="submit" class="btn btn-primary">Publish Lesson</button>
     <a href="{{ url_for('homepage') }}" class="btn btn-secondary">Cancel</a>
 </form>
