@@ -64,10 +64,22 @@ def register():
         birth_date = request.form['birth_date']
         is_member = 'is_member' in request.form
 
-        # Retrieve payment details if membership is selected
-        card_number = request.form.get('card_number')
-        expiry_date = request.form.get('expiry_date')
-        cvv = request.form.get('cvv')
+        # Retrieve phone numbers
+        phone_number1 = request.form.get('phone_number1')
+        phone_number2 = request.form.get('phone_number2')
+
+        # Validate that at least one phone number is provided
+        if not phone_number1:
+            flash('At least one phone number is required.', 'danger')
+            return render_template('register.html')
+
+        # Optional: Validate phone number formats (already partially handled by HTML patterns)
+        phone_numbers = [phone_number1]
+        if phone_number2:
+            phone_numbers.append(phone_number2)
+            if len(phone_numbers) > 2:
+                flash('You can only provide up to two phone numbers.', 'danger')
+                return render_template('register.html')
         
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         
@@ -92,6 +104,12 @@ def register():
                 # Insert into swimmer table with default swimming level
                 cursor.execute('INSERT INTO swimmer (user_id, swimming_level) VALUES (%s, %s)',
                                (user_id, 'Beginner'))
+                mysql.connection.commit()
+
+                # Insert phone numbers into phoneNumber table
+                for phone_number in phone_numbers:
+                    cursor.execute('INSERT INTO phoneNumber (phone_number, swimmer_id) VALUES (%s, %s)',
+                                   (phone_number, user_id))
                 mysql.connection.commit()
 
                 if is_member:
