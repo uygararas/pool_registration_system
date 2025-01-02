@@ -350,3 +350,11 @@ INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style) VALUES
 (4, 2, 'Freestyle'),
 (5, 2, 'Backstroke');
 
+-- Insert sample bookings
+INSERT INTO booking (swimmer_id, session_id, isCompleted, paymentMethod, isPaymentCompleted) VALUES
+(5, 1, FALSE, 'Cash', FALSE),
+(5, 2, TRUE, 'CreditCard', TRUE),
+(6, 3, FALSE, 'Cash', FALSE),
+(6, 4, FALSE, 'CreditCard', FALSE),
+(7, 5, TRUE, 'Cash', TRUE);
+

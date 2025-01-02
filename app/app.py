@@ -1427,21 +1427,37 @@ def generate_report():
 @app.route('/admin_view_bookings')
 def admin_view_bookings():
     if 'loggedin' in session and session.get('role') == 'Admin':
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute("""
-            SELECT 
-                b.swimmer_id,
-                u.forename AS swimmer_name,
-                b.session_id,
-                b.paymentMethod as payment_method,
-                b.isPaymentCompleted as is_payment_completed
-            FROM booking b
-            JOIN user u ON b.swimmer_id = u.user_id
-            ORDER BY b.session_id
-        """)
-        bookings = cursor.fetchall()
-        cursor.close()
-        return render_template('admin_view_bookings.html', bookings=bookings)
+        try:
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            
+            query = """
+                SELECT 
+                    b.swimmer_id,
+                    b.session_id,
+                    b.isCompleted,
+                    b.paymentMethod,
+                    b.isPaymentCompleted,
+                    u.forename,
+                    u.surname,
+                    s.description,
+                    s.date,
+                    s.start_time,
+                    s.end_time
+                FROM booking b
+                JOIN user u ON b.swimmer_id = u.user_id
+                JOIN session s ON b.session_id = s.session_id
+                ORDER BY s.date, s.start_time
+            """
+            cursor.execute(query)
+            bookings = cursor.fetchall()
+            print("Fetched bookings:", bookings)  # Debug print
+            
+            cursor.close()
+            return render_template('admin_view_bookings.html', bookings=bookings)
+        except Exception as e:
+            print("Database error:", str(e))  # Debug print
+            flash(f'Error fetching bookings: {str(e)}', 'danger')
+            return redirect(url_for('admin_homepage'))
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
@@ -1487,9 +1503,24 @@ def admin_view_users():
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
-#end of admin functions   
 
- 
+@app.route('/update_payment_status/<int:swimmer_id>/<int:session_id>', methods=['POST'])
+def update_payment_status(swimmer_id, session_id):
+    if 'loggedin' in session and session.get('role') == 'Admin':
+        try:
+            cursor = mysql.connection.cursor()
+            cursor.execute("""
+                UPDATE booking 
+                SET isPaymentCompleted = TRUE 
+                WHERE swimmer_id = %s AND session_id = %s
+            """, (swimmer_id, session_id))
+            mysql.connection.commit()
+            cursor.close()
+            flash('Payment status updated successfully!', 'success')
+        except Exception as e:
+            flash('Error updating payment status!', 'danger')
+        return redirect(url_for('admin_view_bookings'))
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

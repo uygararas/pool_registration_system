@@ -35,26 +35,39 @@
             <tr>
               <th>Swimmer</th>
               <th>Session</th>
+              <th>Date</th>
+              <th>Time</th>
               <th>Payment Method</th>
-              <th>Payment Completed</th>
+              <th>Payment Status</th>
+              <th>Session Status</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            {% for booking in bookings %}
-            <tr>
-              <td>{{ booking.swimmer_name }}</td>
-              <td>{{ booking.session_id }}</td>
-              <td>{{ booking.payment_method }}</td>
-              <td>{{ 'Yes' if booking.is_payment_completed else 'No' }}</td>
-              <td>
-                {% if not booking.is_payment_completed and
-                booking.payment_method == "Cash" %}
-                <button class="btn-action">Mark Payment Completed</button>
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
+            {% if bookings %}
+                {% for booking in bookings %}
+                <tr>
+                    <td>{{ booking.forename }} {{ booking.surname }}</td>
+                    <td>{{ booking.description }}</td>
+                    <td>{{ booking.date }}</td>
+                    <td>{{ booking.start_time }} - {{ booking.end_time }}</td>
+                    <td>{{ booking.paymentMethod }}</td>
+                    <td>{{ 'Completed' if booking.isPaymentCompleted else 'Pending' }}</td>
+                    <td>{{ 'Completed' if booking.isCompleted else 'Pending' }}</td>
+                    <td>
+                        {% if not booking.isPaymentCompleted and booking.paymentMethod == 'Cash' %}
+                            <form action="{{ url_for('update_payment_status', swimmer_id=booking.swimmer_id, session_id=booking.session_id) }}" method="POST" style="display: inline;">
+                                <button type="submit" class="btn-action">Mark Payment Completed</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="8">No bookings found</td>
+                </tr>
+            {% endif %}
           </tbody>
         </table>
       </div>
