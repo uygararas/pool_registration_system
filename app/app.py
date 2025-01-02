@@ -1038,6 +1038,22 @@ def create_lesson():
                 flash('You already have a lesson scheduled during this time.', 'danger')
                 return redirect(url_for('create_lesson'))
             
+            # Check for conflicts with one-to-one trainings
+            cursor.execute("""
+                SELECT * FROM session s
+                JOIN oneToOneTraining o ON s.session_id = o.session_id
+                WHERE o.coach_id = %s AND s.date = %s
+                AND (
+                    (s.start_time < %s AND s.end_time > %s) OR
+                    (s.start_time >= %s AND s.end_time <= %s)
+                )
+            """, (coach_id, class_date, end_time, start_time, start_time, end_time))
+            training_conflict = cursor.fetchone()
+
+            if training_conflict:
+                flash('Conflict detected: You already have a one-to-one training scheduled during this time.', 'danger')
+                return redirect(url_for('create_lesson'))
+
             # Insert into session table
             try:
                 cursor.execute("""
@@ -1116,6 +1132,23 @@ def edit_lesson(lesson_id):
                 flash('You already have another lesson scheduled during this time.', 'danger')
                 return redirect(url_for('edit_lesson', lesson_id=lesson_id))
             
+            # Check for conflicts with one-to-one trainings
+            cursor.execute("""
+                SELECT * FROM session s
+                JOIN oneToOneTraining o ON s.session_id = o.session_id
+                WHERE o.coach_id = %s AND s.date = %s
+                AND s.session_id != %s
+                AND (
+                    (s.start_time < %s AND s.end_time > %s) OR
+                    (s.start_time >= %s AND s.end_time <= %s)
+                )
+            """, (coach_id, date, lesson_id, end_time, start_time, start_time, end_time))
+            training_conflict = cursor.fetchone()
+
+            if training_conflict:
+                flash('Conflict detected: You already have a one-to-one training scheduled during this time.', 'danger')
+                return redirect(url_for('edit_lesson', lesson_id=lesson_id))
+
             try:
                 # Update session table
                 cursor.execute("""
@@ -1230,6 +1263,22 @@ def create_one_to_one_training():
                 flash('Conflict detected: Another session overlaps with the selected time and lane.', 'danger')
                 return redirect(url_for('create_one_to_one_training'))
 
+            # Check for conflicts with lessons
+            cursor.execute("""
+                SELECT * FROM session s
+                JOIN lesson l ON s.session_id = l.session_id
+                WHERE l.coach_id = %s AND s.date = %s
+                AND (
+                    (s.start_time < %s AND s.end_time > %s) OR
+                    (s.start_time >= %s AND s.end_time <= %s)
+                )
+            """, (coach_id, training_date, end_time, start_time, start_time, end_time))
+            lesson_conflict = cursor.fetchone()
+
+            if lesson_conflict:
+                flash('Conflict detected: You already have a lesson scheduled during this time.', 'danger')
+                return redirect(url_for('create_one_to_one_training'))
+
             # Insert into session table
             try:
                 cursor.execute("""
@@ -1298,6 +1347,23 @@ def edit_one_to_one_training(training_id):
 
             if conflict:
                 flash('Conflict detected: You already have another session scheduled during this time.', 'danger')
+                return redirect(url_for('edit_one_to_one_training', training_id=training_id))
+
+            # Check for conflicts with lessons
+            cursor.execute("""
+                SELECT * FROM session s
+                JOIN lesson l ON s.session_id = l.session_id
+                WHERE l.coach_id = %s AND s.date = %s
+                AND s.session_id != %s
+                AND (
+                    (s.start_time < %s AND s.end_time > %s) OR
+                    (s.start_time >= %s AND s.end_time <= %s)
+                )
+            """, (coach_id, training_date, training_id, end_time, start_time, start_time, end_time))
+            lesson_conflict = cursor.fetchone()
+
+            if lesson_conflict:
+                flash('Conflict detected: You already have a lesson scheduled during this time.', 'danger')
                 return redirect(url_for('edit_one_to_one_training', training_id=training_id))
 
             try:
