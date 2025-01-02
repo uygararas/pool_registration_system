@@ -1,153 +1,92 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<html>
+<head>
     <title>Create Employee</title>
-    <!-- Link to custom CSS -->
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='create_employee.css') }}"
-    />
-  </head>
-  <body>
-    <div class="employee-container">
-      <h1 class="title">Create Coach or Lifeguard Account</h1>
-
-      <form
-        method="POST"
-        action="{{ url_for('create_employee') }}"
-        class="employee-form"
-      >
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h2 class="mt-4">Create Coach or Lifeguard Account</h2>
+    <form method="POST" action="{{ url_for('create_employee') }}">
         <!-- Role Selection -->
         <div class="form-group">
-          <label for="role" class="form-label">Role</label>
-          <select id="role" name="role" class="form-control" required>
-            <option value="Coach">Coach</option>
-            <option value="Lifeguard">Lifeguard</option>
-          </select>
+            <label for="role">Role</label>
+            <select id="role" name="role" class="form-control" required>
+                <option value="Coach">Coach</option>
+                <option value="Lifeguard">Lifeguard</option>
+            </select>
         </div>
 
         <!-- Common Fields -->
         <div class="form-group">
-          <label for="email" class="form-label">Email</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            class="form-control"
-            required
-          />
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="password" class="form-label">Password</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            class="form-control"
-            required
-          />
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="forename" class="form-label">Forename</label>
-          <input
-            type="text"
-            id="forename"
-            name="forename"
-            class="form-control"
-            required
-          />
+            <label for="forename">Forename</label>
+            <input type="text" id="forename" name="forename" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="surname" class="form-label">Surname</label>
-          <input
-            type="text"
-            id="surname"
-            name="surname"
-            class="form-control"
-            required
-          />
+            <label for="surname">Surname</label>
+            <input type="text" id="surname" name="surname" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="salary" class="form-label">Salary</label>
-          <input
-            type="number"
-            id="salary"
-            name="salary"
-            class="form-control"
-            required
-          />
+            <label for="salary">Salary</label>
+            <input type="number" id="salary" name="salary" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="emp_date" class="form-label">Employment Date</label>
-          <input
-            type="date"
-            id="emp_date"
-            name="emp_date"
-            class="form-control"
-            required
-          />
+            <label for="emp_date">Employment Date</label>
+            <input type="date" id="emp_date" name="emp_date" class="form-control" required>
         </div>
 
         <!-- Coach-Specific Fields -->
-        <div id="coach-fields" class="role-fields">
-          <div class="form-group">
-            <label for="rank" class="form-label">Rank</label>
-            <input type="text" id="rank" name="rank" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="specialization" class="form-label"
-              >Specialization</label
-            >
-            <input
-              type="text"
-              id="specialization"
-              name="specialization"
-              class="form-control"
-            />
-          </div>
+        <div id="coach-fields" style="display:none;">
+            <div class="form-group">
+                <label for="rank">Rank</label>
+                <input type="text" id="rank" name="rank" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="specialization">Specialization</label>
+                <input type="text" id="specialization" name="specialization" class="form-control">
+            </div>
         </div>
 
         <!-- Lifeguard-Specific Fields -->
-        <div id="lifeguard-fields" class="role-fields">
-          <div class="form-group">
-            <label for="license_no" class="form-label">License Number</label>
-            <input
-              type="text"
-              id="license_no"
-              name="license_no"
-              class="form-control"
-            />
-          </div>
+        <div id="lifeguard-fields" style="display:none;">
+            <div class="form-group">
+                <label for="license_no">License Number</label>
+                <input type="text" id="license_no" name="license_no" class="form-control">
+            </div>
         </div>
 
         <!-- Submit and Navigation Buttons -->
-        <button type="submit" class="btn-primary">Create Account</button>
-        <a href="{{ url_for('admin_homepage') }}" class="btn-secondary"
-          >Back to Admin Dashboard</a
-        >
-      </form>
-    </div>
+        <button type="submit" class="btn btn-primary">Create Account</button>
+        <a href="{{ url_for('admin_homepage') }}" class="btn btn-secondary">Back to Admin Dashboard</a>
+    </form>
+</div>
 
-    <!-- JavaScript for Role-Based Field Toggle -->
-    <script>
-      const roleField = document.getElementById("role");
-      const coachFields = document.getElementById("coach-fields");
-      const lifeguardFields = document.getElementById("lifeguard-fields");
+<!-- JavaScript for Role-Based Field Toggle -->
+<script>
+    const roleField = document.getElementById('role');
+    const coachFields = document.getElementById('coach-fields');
+    const lifeguardFields = document.getElementById('lifeguard-fields');
 
-      roleField.addEventListener("change", () => {
-        if (roleField.value === "Coach") {
-          coachFields.style.display = "block";
-          lifeguardFields.style.display = "none";
-        } else if (roleField.value === "Lifeguard") {
-          lifeguardFields.style.display = "block";
-          coachFields.style.display = "none";
+    roleField.addEventListener('change', () => {
+        if (roleField.value === 'Coach') {
+            coachFields.style.display = 'block';
+            lifeguardFields.style.display = 'none';
+        } else if (roleField.value === 'Lifeguard') {
+            lifeguardFields.style.display = 'block';
+            coachFields.style.display = 'none';
         } else {
-          coachFields.style.display = "none";
-          lifeguardFields.style.display = "none";
+            coachFields.style.display = 'none';
+            lifeguardFields.style.display = 'none';
         }
-      });
-    </script>
-  </body>
+    });
+</script>
+</body>
 </html>

@@ -1,107 +1,97 @@
+<!-- templates/swimmer_lesson.html -->
 {% extends "base.html" %}
 
-{% block title %}Swimmer Lessons{% endblock %}
+{% block title %}Swimmer Lesson{% endblock %}
 
 {% block content %}
-<link
-  rel="stylesheet"
-  href="{{ url_for('static', filename='swimmer_lesson.css') }}"
-/>
-
-<div class="lesson-container">
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="flash-message alert-{{ category }}">
-            <span class="message-text">{{ message }}</span>
-            <button class="close-btn" aria-label="Close" onclick="this.parentElement.style.display='none';">&times;</button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
+    <h2 class="mt-4">Welcome, Swimmer {{ forename }}!</h2>
+    <a href="{{ url_for('logout') }}" class="btn btn-secondary mb-4">Logout</a>
+    <a href="{{ url_for('swimmer_homepage') }}" class="btn btn-info mb-4">Back to Homepage</a>
+  
     <!-- Filter Form -->
-    <div class="filter-form">
-        <h2 class="section-title">Filter Lessons for Swimmer {{ forename }}!</h2>
+    <div class="filter-section">
+        <!-- Existing filter form code -->
+        <h4>Filter Lessons</h4>
         <form method="GET" action="{{ url_for('swimmer_lessons') }}">
-            <!-- First Row of Filters -->
             <div class="form-row">
-                <div class="form-group">
+                <!-- Class Date -->
+                <div class="form-group col-md-3">
                     <label for="class_date">Class Date</label>
                     <input type="date" class="form-control" id="class_date" name="class_date" value="{{ filters.get('class_date', '') }}">
                 </div>
-                <div class="form-group">
+                
+                <!-- Time Range -->
+                <div class="form-group col-md-3">
                     <label for="start_time">Start Time After</label>
                     <input type="time" class="form-control" id="start_time" name="start_time" value="{{ filters.get('start_time', '') }}">
                 </div>
-                <div class="form-group">
+                <div class="form-group col-md-3">
                     <label for="end_time">End Time Before</label>
                     <input type="time" class="form-control" id="end_time" name="end_time" value="{{ filters.get('end_time', '') }}">
                 </div>
-            </div>
-            <!-- Second Row of Filters -->
-            <div class="form-row">
-                <div class="form-group">
+                
+                <!-- Pool Selection -->
+                <div class="form-group col-md-3">
                     <label for="pool_id">Pool</label>
                     <select class="form-control" id="pool_id" name="pool_id">
                         <option value="All" {% if filters.get('pool_id') == 'All' or not filters.get('pool_id') %}selected{% endif %}>All Pools</option>
                         {% for pool in pools %}
-                        <option value="{{ pool.pool_id }}" {% if filters.get('pool_id') == pool.pool_id|string %}selected{% endif %}>
-                            {{ pool.location }}
-                        </option>
+                            <option value="{{ pool.pool_id }}" {% if filters.get('pool_id') == pool.pool_id|string %}selected{% endif %}>
+                                {{ pool.location }}
+                            </option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="coach">Coach</label>
-                    <select class="form-control" id="coach" name="coach">
-                        <option value="All" {% if filters.get('coach') == 'All' or not filters.get('coach') %}selected{% endif %}>All Coaches</option>
-                        {% for coach in coaches %}
-                        <option value="{{ coach.coach_id }}" {% if filters.get('coach') == coach.coach_id|string %}selected{% endif %}>
-                            {{ coach.forename }} {{ coach.surname }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
+            </div>
+            
+            <div class="form-row">
+                <!-- Session Type (Class Type) -->
+                <div class="form-group col-md-3">
                     <label for="session_type">Class Type</label>
                     <select class="form-control" id="session_type" name="session_type">
                         <option value="All" {% if filters.get('session_type') == 'All' or not filters.get('session_type') %}selected{% endif %}>All Types</option>
-                        {% for session_type in session_types %}
-                        <option value="{{ session_type }}" {% if filters.get('session_type') == session_type %}selected{% endif %}>
-                            {{ session_type }}
-                        </option>
+                        {% for type in session_types %}
+                            <option value="{{ type }}" {% if filters.get('session_type') == type %}selected{% endif %}>
+                                {{ type }}
+                            </option>
                         {% endfor %}
                     </select>
                 </div>
-            </div>
-            <!-- Third Row of Filters -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="min_capacity">Minimum Capacity</label>
-                    <input type="number" class="form-control" id="min_capacity" name="min_capacity" value="{{ filters.get('min_capacity', '') }}" min="0">
+                
+                <!-- Coach Selection -->
+                <div class="form-group col-md-3">
+                    <label for="coach_id">Coach</label>
+                    <select class="form-control" id="coach_id" name="coach_id">
+                        <option value="All" {% if filters.get('coach_id') == 'All' or not filters.get('coach_id') %}selected{% endif %}>All Coaches</option>
+                        {% for coach in coaches %}
+                            <option value="{{ coach.user_id }}" {% if filters.get('coach_id') == coach.user_id|string %}selected{% endif %}>
+                                {{ coach.forename }} {{ coach.surname }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <div class="form-group">
-                    <label for="max_capacity">Maximum Capacity</label>
-                    <input type="number" class="form-control" id="max_capacity" name="max_capacity" value="{{ filters.get('max_capacity', '') }}" min="0">
+                
+                <!-- Capacity Filters -->
+                <div class="form-group col-md-3">
+                    <label for="min_capacity">Min Capacity</label>
+                    <input type="number" class="form-control" id="min_capacity" name="min_capacity" min="0" value="{{ filters.get('min_capacity', '') }}">
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="max_capacity">Max Capacity</label>
+                    <input type="number" class="form-control" id="max_capacity" name="max_capacity" min="0" value="{{ filters.get('max_capacity', '') }}">
                 </div>
             </div>
-            <!-- Action Buttons -->
-            <div class="form-actions">
-                <button type="submit" class="btn-primary">Apply Filters</button>
-                <a href="{{ url_for('swimmer_lessons') }}" class="btn-secondary">Reset Filters</a>
-            </div>
+            
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <a href="{{ url_for('swimmer_lessons') }}" class="btn btn-secondary">Reset Filters</a>
         </form>
     </div>
     
-
     <!-- Lessons Table -->
-    <div class="lessons-section">
-        <h2 class="section-title">Available Lessons</h2>
+    <div class="lessons-table">
+        <h4>Available Lessons</h4>
         {% if lessons %}
-        <div class="table-responsive">
-            <table class="table">
+            <table class="table table-striped">
                 <thead>
                     <tr>
                         <th>Session ID</th>
@@ -113,59 +103,54 @@
                         <th>Class Type</th>
                         <th>Capacity</th>
                         <th>Enrolled Students</th>
-                        <th>Price</th>
+                        <th>Price</th> <!-- New Column -->
                         <th>Coach</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for lesson in lessons %}
-                    <tr>
-                        <td>{{ lesson.session_id }}</td>
-                        <td>{{ lesson.description }}</td>
-                        <td>{{ lesson.date.strftime('%Y-%m-%d') }}</td>
-                        <td>{{ lesson.start_time }}</td>
-                        <td>{{ lesson.end_time }}</td>
-                        <td>{{ lesson.pool_location }}</td>
-                        <td>{{ lesson.session_type }}</td>
-                        <td>{{ lesson.capacity }}</td>
-                        <td>{{ lesson.student_count }}</td>
-                        <td>${{ "%.2f"|format(lesson.price) }}</td>
-                        <td>{{ lesson.coach_forename }} {{ lesson.coach_surname }}</td>
-                        <td>
-                            {% if lesson.is_enrolled %}
-                            <form action="{{ url_for('exit_lesson', session_id=lesson.session_id) }}" method="post">
-                                <button type="submit" class="btn-danger btn-sm">Exit</button>
-                            </form>
-                            {% elif lesson.is_in_queue %}
-                            <form action="{{ url_for('quit_queue', session_id=lesson.session_id) }}" method="post" style="display:inline;">
-                                <button type="submit" class="btn-secondary btn-sm">Quit Queue</button>
-                            </form>
-                            {% elif lesson.can_join_queue %}
-                            <form action="{{ url_for('join_queue', session_id=lesson.session_id) }}" method="post" style="display:inline;">
-                                <button type="submit" class="btn-warning btn-sm">Join Queue</button>
-                            </form>
-                            {% else %}
-                            {% if lesson.student_count < lesson.capacity %}
-                            <form action="{{ url_for('enroll_lesson', session_id=lesson.session_id) }}" method="post" style="display:inline;">
-                                <button type="submit" class="btn-primary btn-sm">Enroll</button>
-                            </form>
-                            {% else %}
-                            <button type="button" class="btn-secondary btn-sm" disabled>Course is Full</button>
-                            {% endif %}
-                            {% endif %}
-                        </td>
-                    </tr>
+                        <tr>
+                            <td>{{ lesson.session_id }}</td>
+                            <td>{{ lesson.description }}</td>
+                            <td>{{ lesson.date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ lesson.start_time }}</td>
+                            <td>{{ lesson.end_time }}</td>
+                            <td>{{ lesson.pool_location }}</td>
+                            <td>{{ lesson.session_type }}</td>
+                            <td>{{ lesson.capacity }}</td>
+                            <td>{{ lesson.student_count }}</td>
+                            <td>${{ "%.2f"|format(lesson.price) }}</td>
+                            <td>{{ lesson.coach_forename }} {{ lesson.coach_surname }}</td>
+                            <td>
+                                {% if lesson.is_enrolled %}
+                                    <form action="{{ url_for('exit_lesson', session_id=lesson.session_id) }}" method="post">
+                                        <button type="submit" class="btn btn-danger btn-sm">Exit</button>
+                                    </form>
+                                    {% elif lesson.is_in_queue %}
+                                        <form action="{{ url_for('quit_queue', session_id=lesson.session_id) }}" method="post" style="display:inline;">
+                                            <button type="submit" class="btn btn-secondary btn-sm">Quit Queue</button>
+                                        </form>
+                                    {% elif lesson.can_join_queue %}
+                                    <form action="{{ url_for('join_queue', session_id=lesson.session_id) }}" method="post" style="display:inline;">
+                                        <button type="submit" class="btn btn-warning btn-sm">Join Queue</button>
+                                    </form>
+                                {% else %}
+                                    {% if lesson.student_count < lesson.capacity %}
+                                        <form action="{{ url_for('enroll_lesson', session_id=lesson.session_id) }}" method="post" style="display:inline;">
+                                            <button type="submit" class="btn btn-primary btn-sm">Enroll</button>
+                                        </form>
+                                    {% else %}
+                                        <button type="button" class="btn btn-secondary btn-sm" disabled> Course is Full</button>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
                     {% endfor %}
-                </tbody>
+                </tbody>                
             </table>
-        </div>
         {% else %}
-        <p>No lessons found matching your criteria.</p>
+            <p>No lessons found matching your criteria.</p>
         {% endif %}
     </div>
-    <div class="navigation-links" style="text-align: center;">
-        <a href="{{ url_for('swimmer_homepage') }}" class="btn-secondary">Back to Homepage</a>
-    </div>
-</div>
 {% endblock %}

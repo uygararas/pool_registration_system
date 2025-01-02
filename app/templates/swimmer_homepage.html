@@ -1,157 +1,114 @@
-{% extends "base.html" %} {% block title %}Swimmer Dashboard{% endblock %}
-{%block content %}
-<link
-  rel="stylesheet"
-  href="{{ url_for('static', filename='swimmer_homepage.css') }}"
-/>
+<!-- templates/swimmer_homepage.html -->
+{% extends "base.html" %}
 
-<div class="swimmer-container">
-  <div class="welcome-section">
-    <h1>Welcome, {{ forename }}!</h1>
-    <p>Your personalized dashboard for managing swimming sessions.</p>
+{% block content %}
+  <h2>Welcome, {{ forename }}!</h2>
+  
+  <div class="button-container">
+    <a href="{{ url_for('swimmer_lessons') }}" class="btn btn-primary">Enroll/Cancel Lesson</a>
+    <a href="{{ url_for('swimmer_free_session') }}" class="btn btn-secondary">Book/Cancel Free Session</a>
+    <a href="{{ url_for('swimmer_one_to_one_training') }}" class="btn btn-success">Enroll/Cancel One-to-One Training</a>
   </div>
 
-  <div class="actions-section">
-    <h2>Actions</h2>
-    <div class="actions-grid">
-      <a href="{{ url_for('swimmer_lessons') }}" class="action-card">
-        <span class="icon"><i class="fas fa-swimmer"></i></span>
-        Enroll/Cancel Lesson
-      </a>
-      <a href="{{ url_for('swimmer_free_session') }}" class="action-card">
-        <span class="icon"><i class="fas fa-calendar-check"></i></span>
-        Book/Cancel Free Session
-      </a>
-      <a
-        href="{{ url_for('swimmer_one_to_one_training') }}"
-        class="action-card"
-      >
-        <span class="icon"><i class="fas fa-user-plus"></i></span>
-        Enroll/Cancel One-to-One Training
-      </a>
-    </div>
+  <!-- Logout Button -->
+  <div class="mt-4">
+    <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
   </div>
 
   <div class="booked-sessions mt-5">
     <h3>Upcoming Sessions</h3>
-    <div class="table-container">
-      {% if upcoming_sessions %}
-      <table class="table table-bordered">
-        <thead>
-          <tr>
-            <th>Session ID</th>
-            <th>Session Type</th>
-            <th>Description</th>
-            <th>Date</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-            <th>Pool Location</th>
-            <th>IsPaymentCompleted</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for session in upcoming_sessions %}
-          <tr>
-            <td>{{ session.session_id }}</td>
-            <td>{{ session.session_type }}</td>
-            <td>{{ session.description }}</td>
-            <td>{{ session.date.strftime('%Y-%m-%d') }}</td>
-            <td>{{ session.start_time }}</td>
-            <td>{{ session.end_time }}</td>
-            <td>{{ session.pool_location }}</td>
-            <td>
-              {{ "PaymentSuccessful" if session.isPaymentCompleted else
-              "WaitingPayment" }}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p>You have no upcoming sessions.</p>
-      {% endif %}
-    </div>
+    {% if upcoming_sessions %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Session ID</th>
+                    <th>Session Type</th>
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Pool Location</th>
+                    <th>IsPaymentCompleted</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in upcoming_sessions %}
+                    <tr>
+                        <td>{{ session.session_id }}</td>
+                        <td>{{ session.session_type }}</td>
+                        <td>{{ session.description }}</td>
+                        <td>{{ session.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ session.start_time }}</td>
+                        <td>{{ session.end_time }}</td>
+                        <td>{{ session.pool_location }}</td>
+                        <td>{{ "PaymentSuccessful" if session.isPaymentCompleted else "WaitingPayment" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have no upcoming sessions.</p>
+    {% endif %}
   </div>
 
   <div class="completed-sessions mt-5">
     <h3>Completed Sessions</h3>
-    <div class="table-container">
-      {% if completed_sessions %}
-      <table class="table table-bordered">
-        <thead>
-          <tr>
-            <th>Session ID</th>
-            <th>Session Type</th>
-            <th>Description</th>
-            <th>Date</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-            <th>Pool Location</th>
-            <th>IsPaymentCompleted</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for session in completed_sessions %}
-          <tr>
-            <td>{{ session.session_id }}</td>
-            <td>{{ session.session_type }}</td>
-            <td>{{ session.description }}</td>
-            <td>{{ session.date.strftime('%Y-%m-%d') }}</td>
-            <td>{{ session.start_time }}</td>
-            <td>{{ session.end_time }}</td>
-            <td>{{ session.pool_location }}</td>
-            <td>
-              {{ "PaymentSuccessful" if session.isPaymentCompleted else
-              "WaitingPayment" }}
-            </td>
-            <td>
-              {% if session.session_type == 'Lesson' %} {% if not
-              session.has_reviewed_coach %}
-              <a
-                href="{{ url_for('review_coach', session_id=session.session_id) }}"
-                class="btn btn-warning btn-sm"
-                >Review Coach</a
-              >
-              {% else %}
-              <button class="btn btn-secondary btn-sm" disabled>
-                Reviewed
-              </button>
-              {% endif %} {% if not session.has_reviewed_lesson %}
-              <a
-                href="{{ url_for('review_lesson', session_id=session.session_id) }}"
-                class="btn btn-info btn-sm"
-                >Review Lesson</a
-              >
-              {% else %}
-              <button class="btn btn-secondary btn-sm" disabled>
-                Reviewed
-              </button>
-              {% endif %} {% elif session.session_type == 'One-to-One Training'
-              %} {% if not session.has_reviewed_coach %}
-              <a
-                href="{{ url_for('review_coach', session_id=session.session_id) }}"
-                class="btn btn-warning btn-sm"
-                >Review Coach</a
-              >
-              {% else %}
-              <button class="btn btn-secondary btn-sm" disabled>
-                Reviewed
-              </button>
-              {% endif %} {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p>You have no completed sessions.</p>
-      {% endif %}
-    </div>
-  </div>
+    {% if completed_sessions %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Session ID</th>
+                    <th>Session Type</th>
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Pool Location</th>
+                    <th>IsPaymentCompleted</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in completed_sessions %}
+                    <tr>
+                        <td>{{ session.session_id }}</td>
+                        <td>{{ session.session_type }}</td>
+                        <td>{{ session.description }}</td>
+                        <td>{{ session.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ session.start_time }}</td>
+                        <td>{{ session.end_time }}</td>
+                        <td>{{ session.pool_location }}</td>
+                        <td>{{ "PaymentSuccessful" if session.isPaymentCompleted else "WaitingPayment" }}</td>
+                        <td>
+                            {% if session.session_type == 'Lesson' %}
+                                <!-- Review Coach Button -->
+                                {% if not session.has_reviewed_coach %}
+                                    <a href="{{ url_for('review_coach', session_id=session.session_id) }}" class="btn btn-warning btn-sm">Review Coach</a>
+                                {% else %}
+                                    <button class="btn btn-secondary btn-sm" disabled>Reviewed</button>
+                                {% endif %}
 
-  <div class="mt-4">
-    <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+                                <!-- Review Lesson Button -->
+                                {% if not session.has_reviewed_lesson %}
+                                    <a href="{{ url_for('review_lesson', session_id=session.session_id) }}" class="btn btn-info btn-sm">Review Lesson</a>
+                                {% else %}
+                                    <button class="btn btn-secondary btn-sm" disabled>Reviewed</button>
+                                {% endif %}
+                            {% elif session.session_type == 'One-to-One Training' %}
+                                <!-- Review Coach Button -->
+                                {% if not session.has_reviewed_coach %}
+                                    <a href="{{ url_for('review_coach', session_id=session.session_id) }}" class="btn btn-warning btn-sm">Review Coach</a>
+                                {% else %}
+                                    <button class="btn btn-secondary btn-sm" disabled>Reviewed</button>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have no completed sessions.</p>
+    {% endif %}
   </div>
-</div>
 {% endblock %}

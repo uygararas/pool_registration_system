@@ -3,12 +3,8 @@
 {% block title %}Edit Lesson{% endblock %}
 
 {% block content %}
-<link
-  rel="stylesheet"
-  href="{{ url_for('static', filename='edit_lesson.css') }}"
-/>
-<h2 class="mt-4 title">Edit Lesson</h2>
-<form method="POST" action="{{ url_for('edit_lesson', lesson_id=lesson.session_id) }}" class="edit-form">
+<h2 class="mt-4">Edit Lesson</h2>
+<form method="POST" action="{{ url_for('edit_lesson', lesson_id=lesson.session_id) }}">
     <div class="form-group">
         <label for="description">Course Description:</label>
         <textarea class="form-control" name="description" rows="4" required>{{ lesson.description }}</textarea>
@@ -27,7 +23,8 @@
     </div>
     <div class="form-group">
         <label for="pool_id">Pool:</label>
-        <select class="form-control" name="pool_id" id="pool_id" required onchange="updateLaneOptions()" data-selected-lane="{{ lesson.lane_no }}">
+        <select class="form-control" name="pool_id" id="pool_id" required onchange="updateLaneOptions()"
+            data-selected-lane="{{ lesson.lane_no }}">
             {% for pool in pools %}
                 <option value="{{ pool.pool_id }}" data-lane-count="{{ pool.lane_count }}" {% if pool.pool_id == lesson.pool_id %}selected{% endif %}>
                     {{ pool.location }}
@@ -53,10 +50,8 @@
             <option value="MenOnly" {% if lesson.session_type == "MenOnly" %}selected{% endif %}>Men Only</option>
         </select>
     </div>
-    <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-        <a href="{{ url_for('homepage') }}" class="btn btn-secondary">Cancel</a>
-    </div>
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a href="{{ url_for('homepage') }}" class="btn btn-secondary">Cancel</a>
 </form>
 
 <script>
@@ -70,7 +65,7 @@
         // Clear existing options
         laneSelect.innerHTML = '';
 
-        // Populate lane options dynamically
+        // Populate lane options
         for (let i = 1; i <= laneCount; i++) {
             const option = document.createElement('option');
             option.value = i;
