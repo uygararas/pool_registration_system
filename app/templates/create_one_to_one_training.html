@@ -1,4 +1,3 @@
-<!-- templates/create_one_to_one_training.html -->
 {% extends "base.html" %}
 
 {% block title %}Create One-to-One Training{% endblock %}
@@ -39,6 +38,10 @@
     <div class="form-group">
         <label for="swimming_style">Swimming Style:</label>
         <input type="text" class="form-control" name="swimming_style" required>
+    </div>
+    <div class="form-group">
+        <label for="price">Price:</label>
+        <input type="number" step="0.01" class="form-control" name="price" min="0" required>
     </div>
     <button type="submit" class="btn btn-success">Publish Training</button>
     <a href="{{ url_for('homepage') }}" class="btn btn-secondary">Cancel</a>

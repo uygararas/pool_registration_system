@@ -119,22 +119,24 @@ CREATE TABLE IF NOT EXISTS freeSession (
 CREATE TABLE IF NOT EXISTS lesson (
     session_id INT PRIMARY KEY,
     coach_id INT NOT NULL,
-    student_count INT NOT NULL ,
-    capacity INT NOT NULL check(capacity >= student_count),
+    student_count INT NOT NULL,
+    capacity INT NOT NULL CHECK(capacity >= student_count),
     session_type ENUM('FemaleOnly', 'MaleOnly', 'Mixed') NOT NULL DEFAULT 'Mixed',
+    price DECIMAL(10, 2) NOT NULL CHECK(price > 0),
     FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE,
     FOREIGN KEY (coach_id) REFERENCES coach(user_id) ON DELETE CASCADE
 );
-
 
 -- 4.15 OneToOneTraining Table
 CREATE TABLE IF NOT EXISTS oneToOneTraining (
     session_id INT PRIMARY KEY,
     coach_id INT NOT NULL,
     swimming_style VARCHAR(100) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL CHECK(price > 0),
     FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE,
     FOREIGN KEY (coach_id) REFERENCES coach(user_id) ON DELETE CASCADE
 );
+
 
 -- 4.16 Report Table
 CREATE TABLE IF NOT EXISTS report (
@@ -339,16 +341,15 @@ INSERT INTO session (session_id, description, pool_id, lane_no, date, start_time
 
 -- Assign Lesson or One-to-One Training types
 -- Lesson sessions (Session IDs 1, 2, and 6)
-INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type) VALUES
-(1, 2, 10, 15, 'Mixed'),
-(2, 2, 11, 12, 'FemaleOnly'),
-(6, 2, 15, 16, 'MaleOnly');
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price) VALUES
+(1, 2, 10, 15, 'Mixed', 50.00),
+(2, 2, 11, 12, 'FemaleOnly', 60.00),
+(6, 2, 15, 16, 'MaleOnly', 70.00);
 
--- One-to-One Training sessions (Session IDs 3, 4, and 5)
-INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style) VALUES
-(3, 2, 'Butterfly'),
-(4, 2, 'Freestyle'),
-(5, 2, 'Backstroke');
+INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style, price) VALUES
+(3, 2, 'Butterfly', 100.00),
+(4, 2, 'Freestyle', 90.00),
+(5, 2, 'Backstroke', 80.00);
 
 -- Insert sample bookings
 INSERT INTO booking (swimmer_id, session_id, isCompleted, paymentMethod, isPaymentCompleted) VALUES

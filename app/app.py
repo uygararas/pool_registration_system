@@ -955,7 +955,7 @@ def coach_homepage():
         # Fetch Lessons (General Classes)
         cursor.execute("""
             SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, 
-                   s.pool_id, s.lane_no, l.session_type
+                   s.pool_id, s.lane_no, l.session_type, l.price
             FROM lesson l
             JOIN session s ON l.session_id = s.session_id
             WHERE l.coach_id = %s
@@ -965,18 +965,24 @@ def coach_homepage():
         # Fetch One-to-One Trainings
         cursor.execute("""
             SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, 
-                   s.pool_id, s.lane_no, o.swimming_style
+                   s.pool_id, s.lane_no, o.swimming_style, o.price
             FROM oneToOneTraining o
             JOIN session s ON o.session_id = s.session_id
             WHERE o.coach_id = %s
         """, (coach_id,))
         one_to_one_trainings = cursor.fetchall()
 
+        # Get the current date and time
+        current_date = datetime.now().date()
+        current_time = datetime.now().time()
+
         return render_template(
             'coach_homepage.html',
             forename=forename,
             lessons=lessons,
-            one_to_one_trainings=one_to_one_trainings
+            one_to_one_trainings=one_to_one_trainings,
+            current_date=current_date,
+            current_time=current_time
         )
     else:
         flash('Unauthorized access!', 'danger')
@@ -995,6 +1001,7 @@ def create_lesson():
             lane_no = request.form['lane_no']
             capacity = request.form['capacity']
             session_type = request.form['session_type']  # New field
+            price = request.form['price']  # New price field
             
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             
@@ -1028,8 +1035,8 @@ def create_lesson():
             # Insert into lesson table
             try:
                 coach_id = session['user_id']
-                cursor.execute('INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type) VALUES (%s, %s, %s, %s, %s)',
-                               (session_id, coach_id, 0, capacity, session_type))
+                cursor.execute('INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price) VALUES (%s, %s, %s, %s, %s, %s)',
+                               (session_id, coach_id, 0, capacity, session_type, price))
                 mysql.connection.commit()
             except Exception as e:
                 mysql.connection.rollback()
@@ -1054,6 +1061,70 @@ def create_lesson():
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
+@app.route('/edit_lesson/<int:lesson_id>', methods=['GET', 'POST'])
+def edit_lesson(lesson_id):
+    if 'loggedin' in session and session['role'] == 'Coach':
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        if request.method == 'POST':
+            description = request.form['description']
+            date = request.form['class_date']
+            start_time = request.form['start_time']
+            end_time = request.form['end_time']
+            pool_id = request.form['pool_id']
+            lane_no = request.form['lane_no']
+            session_type = request.form['session_type']
+            price = request.form['price']  # New price field
+            
+            try:
+                # Update session table
+                cursor.execute("""
+                    UPDATE session
+                    SET description = %s, date = %s, start_time = %s, end_time = %s, pool_id = %s, lane_no = %s
+                    WHERE session_id = %s
+                """, (description, date, start_time, end_time, pool_id, lane_no, lesson_id))
+                
+                # Update lesson table
+                cursor.execute("""
+                    UPDATE lesson
+                    SET session_type = %s, price = %s
+                    WHERE session_id = %s
+                """, (session_type, price, lesson_id))
+                
+                mysql.connection.commit()
+                flash('Lesson updated successfully!', 'success')
+                return redirect(url_for('homepage'))
+            except Exception as e:
+                mysql.connection.rollback()
+                flash(f'Error updating lesson: {str(e)}', 'danger')
+        else:
+            # Fetch existing lesson data
+            cursor.execute("""
+                SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, s.pool_id, s.lane_no, l.capacity, l.session_type, l.price
+                FROM session s
+                JOIN lesson l ON s.session_id = l.session_id
+                WHERE s.session_id = %s
+            """, (lesson_id,))
+            lesson = cursor.fetchone()
+            
+            if not lesson:
+                flash('Lesson not found!', 'danger')
+                return redirect(url_for('homepage'))
+            
+            # Fetch pools and lanes
+            cursor.execute("""
+                SELECT pool.pool_id, pool.location, COUNT(lane.lane_no) AS lane_count
+                FROM pool
+                LEFT JOIN lane ON pool.pool_id = lane.pool_id
+                GROUP BY pool.pool_id, pool.location
+            """)
+            pools = cursor.fetchall()
+            
+            return render_template('edit_lesson.html', lesson=lesson, pools=pools)
+    
+    flash('Unauthorized access!', 'danger')
+    return redirect(url_for('login'))
+
 @app.route('/delete_lesson/<int:lesson_id>', methods=['POST'])
 def delete_lesson(lesson_id):
     if 'loggedin' in session and session['role'] == 'Coach':
@@ -1071,7 +1142,7 @@ def delete_lesson(lesson_id):
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
-
+    
 @app.route('/create_one_to_one_training', methods=['GET', 'POST'])
 def create_one_to_one_training():
     if 'loggedin' in session and session.get('role') == 'Coach':
@@ -1083,6 +1154,7 @@ def create_one_to_one_training():
             pool_id = request.form['pool_id']
             lane_no = request.form['lane_no']
             swimming_style = request.form['swimming_style']
+            price = request.form['price']  # New price field
 
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             
@@ -1114,14 +1186,15 @@ def create_one_to_one_training():
             
             try:
                 coach_id = session['user_id']
-                cursor.execute('INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style) VALUES (%s, %s, %s)',
-                               (session_id, coach_id, swimming_style))
+                cursor.execute('INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style, price) VALUES (%s, %s, %s, %s)',
+                               (session_id, coach_id, swimming_style, price))
                 mysql.connection.commit()
                 flash('One-to-One Training created successfully!', 'success')
                 return redirect(url_for('homepage'))
             except Exception as e:
                 mysql.connection.rollback()
                 flash(f'Error creating training: {str(e)}', 'danger')
+                return redirect(url_for('create_one_to_one_training'))
         else:
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             cursor.execute("""
@@ -1147,18 +1220,23 @@ def edit_one_to_one_training(training_id):
             pool_id = request.form['pool_id']
             lane_no = request.form['lane_no']
             swimming_style = request.form['swimming_style']
+            price = request.form['price']  # New price field
             
             try:
+                # Update session table
                 cursor.execute("""
                     UPDATE session
                     SET description = %s, date = %s, start_time = %s, end_time = %s, pool_id = %s, lane_no = %s
                     WHERE session_id = %s
                 """, (description, training_date, start_time, end_time, pool_id, lane_no, training_id))
+                
+                # Update oneToOneTraining table
                 cursor.execute("""
                     UPDATE oneToOneTraining
-                    SET swimming_style = %s
+                    SET swimming_style = %s, price = %s
                     WHERE session_id = %s
-                """, (swimming_style, training_id))
+                """, (swimming_style, price, training_id))
+                
                 mysql.connection.commit()
                 flash('Training updated successfully!', 'success')
                 return redirect(url_for('homepage'))
@@ -1166,14 +1244,16 @@ def edit_one_to_one_training(training_id):
                 mysql.connection.rollback()
                 flash(f'Error updating training: {str(e)}', 'danger')
         else:
+            # Fetch existing training data
             cursor.execute("""
-                SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, s.pool_id, s.lane_no, o.swimming_style
+                SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, s.pool_id, s.lane_no, o.swimming_style, o.price
                 FROM session s
                 JOIN oneToOneTraining o ON s.session_id = o.session_id
                 WHERE s.session_id = %s
             """, (training_id,))
             training = cursor.fetchone()
             
+            # Fetch pools and lanes
             cursor.execute("""
                 SELECT pool.pool_id, pool.location, COUNT(lane.lane_no) AS lane_count
                 FROM pool
@@ -1184,6 +1264,7 @@ def edit_one_to_one_training(training_id):
             return render_template('edit_one_to_one_training.html', training=training, pools=pools)
     flash('Unauthorized access!', 'danger')
     return redirect(url_for('login'))
+
 
 @app.route('/delete_one_to_one_training/<int:training_id>', methods=['POST'])
 def delete_one_to_one_training(training_id):
@@ -1199,62 +1280,6 @@ def delete_one_to_one_training(training_id):
             flash(f'Error deleting training: {str(e)}', 'danger')
     return redirect(url_for('homepage'))
 
-@app.route('/edit_lesson/<int:lesson_id>', methods=['GET', 'POST'])
-def edit_lesson(lesson_id):
-    if 'loggedin' in session and session['role'] == 'Coach':
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        
-        if request.method == 'POST':
-            description = request.form['description']
-            date = request.form['class_date']
-            start_time = request.form['start_time']
-            end_time = request.form['end_time']
-            pool_id = request.form['pool_id']
-            lane_no = request.form['lane_no']
-            session_type = request.form['session_type']
-            
-            try:
-                cursor.execute("""
-                    UPDATE session
-                    SET description = %s, date = %s, start_time = %s, end_time = %s, pool_id = %s, lane_no = %s
-                    WHERE session_id = %s
-                """, (description, date, start_time, end_time, pool_id, lane_no, lesson_id))
-                cursor.execute("""
-                    UPDATE lesson
-                    SET session_type = %s
-                    WHERE session_id = %s
-                """, (session_type, lesson_id))
-                mysql.connection.commit()
-                flash('Lesson updated successfully!', 'success')
-                return redirect(url_for('homepage'))
-            except Exception as e:
-                mysql.connection.rollback()
-                flash(f'Error updating lesson: {str(e)}', 'danger')
-        else:
-            cursor.execute("""
-                SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, s.pool_id, s.lane_no, l.capacity, l.session_type
-                FROM session s
-                JOIN lesson l ON s.session_id = l.session_id
-                WHERE s.session_id = %s
-            """, (lesson_id,))
-            lesson = cursor.fetchone()
-            
-            if not lesson:
-                flash('Lesson not found!', 'danger')
-                return redirect(url_for('homepage'))
-            
-            cursor.execute("""
-                SELECT pool.pool_id, pool.location, COUNT(lane.lane_no) AS lane_count
-                FROM pool
-                LEFT JOIN lane ON pool.pool_id = lane.pool_id
-                GROUP BY pool.pool_id, pool.location
-            """)
-            pools = cursor.fetchall()
-            
-            return render_template('edit_lesson.html', lesson=lesson, pools=pools)
-    
-    flash('Unauthorized access!', 'danger')
-    return redirect(url_for('login'))
 #end of coach functions
 
 #################################################################
