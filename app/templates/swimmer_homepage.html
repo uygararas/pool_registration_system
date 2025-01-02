@@ -7,7 +7,7 @@
   <div class="button-container">
     <a href="{{ url_for('swimmer_lessons') }}" class="btn btn-primary">Enroll/Cancel Lesson</a>
     <a href="{{ url_for('swimmer_free_session') }}" class="btn btn-secondary">Book/Cancel Free Session</a>
-    <a href="{{ url_for('swimmer_one_to_one_training') }}" class="btn btn-success">Enroll/Cancel One-to-One Training</a>
+    <a href="{{ url_for('swimmer_one_to_one_trainings') }}" class="btn btn-success">Enroll/Cancel One-to-One Training</a>
   </div>
 
   <!-- Logout Button -->
@@ -85,21 +85,21 @@
                                 {% if not session.has_reviewed_coach %}
                                     <a href="{{ url_for('review_coach', session_id=session.session_id) }}" class="btn btn-warning btn-sm">Review Coach</a>
                                 {% else %}
-                                    <button class="btn btn-secondary btn-sm" disabled>Reviewed</button>
+                                    <button class="btn btn-secondary btn-sm" disabled>Reviewed Coach</button>
                                 {% endif %}
 
                                 <!-- Review Lesson Button -->
                                 {% if not session.has_reviewed_lesson %}
                                     <a href="{{ url_for('review_lesson', session_id=session.session_id) }}" class="btn btn-info btn-sm">Review Lesson</a>
                                 {% else %}
-                                    <button class="btn btn-secondary btn-sm" disabled>Reviewed</button>
+                                    <button class="btn btn-secondary btn-sm" disabled>Reviewed Lesson</button>
                                 {% endif %}
                             {% elif session.session_type == 'One-to-One Training' %}
                                 <!-- Review Coach Button -->
                                 {% if not session.has_reviewed_coach %}
                                     <a href="{{ url_for('review_coach', session_id=session.session_id) }}" class="btn btn-warning btn-sm">Review Coach</a>
                                 {% else %}
-                                    <button class="btn btn-secondary btn-sm" disabled>Reviewed</button>
+                                    <button class="btn btn-secondary btn-sm" disabled>Reviewed Coach</button>
                                 {% endif %}
                             {% endif %}
                         </td>

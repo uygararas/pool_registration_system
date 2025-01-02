@@ -403,7 +403,9 @@ def review_coach(session_id):
     
     # Verify participation
     cursor.execute("""
-        SELECT s.session_type, l.coach_id
+        SELECT 
+            s.session_type, 
+            COALESCE(l.coach_id, ot.coach_id) AS coach_id
         FROM swimmer_booked_sessions s
         LEFT JOIN lesson l ON s.session_id = l.session_id
         LEFT JOIN oneToOneTraining ot ON s.session_id = ot.session_id
@@ -930,15 +932,155 @@ def swimmer_free_session():
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
-
-@app.route('/swimmer_one_to_one_training')
-def swimmer_one_to_one_training():
+@app.route('/swimmer_one_to_one_trainings')
+def swimmer_one_to_one_trainings():
     if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
         forename = session.get('forename', 'Member')
-        return render_template('swimmer_one_to_one_training.html', forename=forename)
+        swimmer_id = session['user_id']
+        role = session.get('role')
+        
+        # Retrieve filter parameters
+        coach_id = request.args.get('coach_id')
+        
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Base query to fetch one-to-one trainings
+        query = """
+            SELECT 
+                s.session_id, 
+                s.description, 
+                s.date, 
+                s.start_time, 
+                s.end_time, 
+                p.location AS pool_location,
+                ot.swimming_style,
+                c.forename AS coach_forename,
+                c.surname AS coach_surname,
+                COUNT(b.swimmer_id) AS enrolled_count
+            FROM oneToOneTraining ot
+            JOIN session s ON ot.session_id = s.session_id
+            JOIN pool p ON s.pool_id = p.pool_id
+            JOIN coach co ON ot.coach_id = co.user_id
+            JOIN user c ON co.user_id = c.user_id
+            LEFT JOIN booking b ON s.session_id = b.session_id
+        """
+        params = []
+        
+        # Apply coach filter if selected
+        if coach_id:
+            query += " WHERE co.user_id = %s"
+            params.append(coach_id)
+        
+        query += " GROUP BY s.session_id"
+        query += " ORDER BY s.date ASC, s.start_time ASC"
+        
+        cursor.execute(query, tuple(params))
+        trainings = cursor.fetchall()
+        
+        # Fetch available coaches for the filter dropdown
+        cursor.execute("""
+            SELECT c.user_id, u.forename, u.surname 
+            FROM coach c
+            JOIN user u ON c.user_id = u.user_id
+        """)
+        coaches = cursor.fetchall()
+        
+        # Process trainings to mark as full or not
+        for training in trainings:
+            
+            training['is_full'] = training['enrolled_count'] >= 1
+        
+        cursor.close()
+        
+        return render_template(
+            'swimmer_one_to_one_trainings.html',
+            forename=forename,
+            trainings=trainings,
+            coaches=coaches,
+            filters=request.args
+        )
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
+
+@app.route('/join_one_to_one_training/<int:session_id>', methods=['GET'])
+def join_one_to_one_training(session_id):
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
+        return redirect(url_for('swimmer_one_to_one_training_payment', session_id=session_id))
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+@app.route('/swimmer_one_to_one_training_payment/<int:session_id>', methods=['GET'])
+def swimmer_one_to_one_training_payment(session_id):
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
+        return render_template('swimmer_one_to_one_training_payment.html', session_id=session_id)
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+    
+@app.route('/process_one_to_one_training_payment/<int:session_id>', methods=['POST'])
+def process_one_to_one_training_payment(session_id):
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
+        swimmer_id = session['user_id']
+        payment_method = request.form.get('payment_method')
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Validate payment method
+        if payment_method not in ['CreditCard', 'Cash']:
+            flash('Invalid payment method selected.', 'danger')
+            return redirect(url_for('swimmer_one_to_one_training_payment', session_id=session_id))
+        
+        # Check if class is already full
+        cursor.execute("""
+            SELECT COUNT(*) AS enrolled_count
+            FROM booking b
+            JOIN oneToOneTraining ot ON b.session_id = ot.session_id
+            WHERE ot.session_id = %s
+        """, (session_id,))
+        result = cursor.fetchone()
+        enrolled_count = result['enrolled_count']
+        
+        if enrolled_count >= 1:
+            flash('Cannot enroll: The one-to-one training session is full.', 'danger')
+            cursor.close()
+            return redirect(url_for('swimmer_one_to_one_trainings'))
+        
+        # Check if already enrolled
+        cursor.execute('SELECT * FROM booking WHERE swimmer_id = %s AND session_id = %s', (swimmer_id, session_id))
+        if cursor.fetchone():
+            flash('You are already enrolled in this one-to-one training.', 'warning')
+            cursor.close()
+            return redirect(url_for('swimmer_one_to_one_trainings'))
+        
+        # Insert the booking with isCompleted=False and isPaymentCompleted based on payment method
+        try:
+            if payment_method == 'CreditCard':
+                # Assume payment is successful
+                is_payment_completed = True
+            else:
+                is_payment_completed = False
+            
+            # Insert into booking
+            cursor.execute("""
+                INSERT INTO booking (swimmer_id, session_id, isCompleted, paymentMethod, isPaymentCompleted)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (swimmer_id, session_id, False, payment_method, is_payment_completed))
+            
+            mysql.connection.commit()
+            flash('Successfully enrolled in the one-to-one training. Payment status updated.', 'success')
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f'Error enrolling in training: {str(e)}', 'danger')
+            return redirect(url_for('swimmer_one_to_one_trainings'))
+        finally:
+            cursor.close()
+        
+        return redirect(url_for('swimmer_homepage'))
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
 #end of swimmer/member functions
 
 #################################################################

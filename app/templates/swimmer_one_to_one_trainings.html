@@ -1,0 +1,74 @@
+<!-- templates/swimmer_one_to_one_trainings.html -->
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>One-to-One Trainings</h2>
+  <p>Hello, {{ forename }}! Browse available one-to-one training sessions below.</p>
+  
+  <!-- Coach Filtering -->
+  <div class="filter-section mt-4">
+    <form method="GET" action="{{ url_for('swimmer_one_to_one_trainings') }}">
+      <div class="form-group">
+        <label for="coach_id">Filter by Coach:</label>
+        <select class="form-control" id="coach_id" name="coach_id">
+          <option value="">All Coaches</option>
+          {% for coach in coaches %}
+            <option value="{{ coach.user_id }}" {% if filters.get('coach_id') == coach.user_id|string %}selected{% endif %}>
+              {{ coach.forename }} {{ coach.surname }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Apply Filter</button>
+      <a href="{{ url_for('swimmer_one_to_one_trainings') }}" class="btn btn-secondary">Reset Filter</a>
+    </form>
+  </div>
+  
+  <!-- One-to-One Trainings Table -->
+  <div class="trainings-table mt-4">
+    {% if trainings %}
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Session ID</th>
+            <th>Description</th>
+            <th>Date</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Pool Location</th>
+            <th>Swimming Style</th>
+            <th>Coach</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for training in trainings %}
+            <tr>
+              <td>{{ training.session_id }}</td>
+              <td>{{ training.description }}</td>
+              <td>{{ training.date.strftime('%Y-%m-%d') }}</td>
+              <td>{{ training.start_time }}</td>
+              <td>{{ training.end_time }}</td>
+              <td>{{ training.pool_location }}</td>
+              <td>{{ training.swimming_style }}</td>
+              <td>{{ training.coach_forename }} {{ training.coach_surname }}</td>
+              <td>
+                {% if training.is_full %}
+                  <button class="btn btn-secondary btn-sm" disabled>Class is Full</button>
+                {% else %}
+                  <a href="{{ url_for('join_one_to_one_training', session_id=training.session_id) }}" class="btn btn-primary btn-sm">Join</a>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No one-to-one training sessions available.</p>
+    {% endif %}
+  </div>
+  
+  <div class="mt-4">
+    <a href="{{ url_for('swimmer_homepage') }}" class="btn btn-info">Back to Homepage</a>
+  </div>
+{% endblock %}
