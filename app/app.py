@@ -1694,40 +1694,54 @@ def generate_report():
         FROM lesson l
         JOIN lessonReview lr ON l.session_id = lr.lesson_id
         JOIN review r ON lr.review_id = r.review_id
-        GROUP BY l.session_id
-        ORDER BY AVG(r.rating) DESC
+        GROUP BY l.session_id, l.session_type
+        HAVING AVG(r.rating) = (
+            SELECT MAX(avg_rating)
+            FROM (
+                SELECT AVG(r2.rating) as avg_rating
+                FROM lesson l2
+                JOIN lessonReview lr2 ON l2.session_id = lr2.lesson_id
+                JOIN review r2 ON lr2.review_id = r2.review_id
+                GROUP BY l2.session_id
+            ) as avg_ratings
+        )
         LIMIT 1;
         """)
         most_liked_lesson = cursor.fetchone()
         most_liked_lesson = most_liked_lesson[0] if most_liked_lesson else "No data"
 
-        # Most liked coach
+        # Most liked coach - UPDATED to use MAX
         cursor.execute("""
         SELECT u.forename, u.surname
         FROM user u
         JOIN coachReview cr ON u.user_id = cr.coach_id
         JOIN review r ON cr.review_id = r.review_id
-        GROUP BY u.user_id
-        ORDER BY AVG(r.rating) DESC
+        GROUP BY u.user_id, u.forename, u.surname
+        HAVING AVG(r.rating) = (
+            SELECT MAX(avg_rating)
+            FROM (
+                SELECT AVG(r2.rating) as avg_rating
+                FROM coachReview cr2
+                JOIN review r2 ON cr2.review_id = r2.review_id
+                GROUP BY cr2.coach_id
+            ) as avg_ratings
+        )
         LIMIT 1
         """)
         most_liked_coach = cursor.fetchone()
         most_liked_coach = f"{most_liked_coach[0]} {most_liked_coach[1]}" if most_liked_coach else "No data"
 
-        # Average queue length - UPDATED QUERY
+        # Average queue length - Using COUNT and AVG
         cursor.execute("""
-            SELECT COUNT(*) as queue_count, lesson_id 
-            FROM swimmerWaitQueue 
-            GROUP BY lesson_id
-            """)
-        queue_counts = cursor.fetchall()
-        
-        # Calculate average queue length
-        if queue_counts:
-            total_queue_length = sum(count[0] for count in queue_counts)
-            average_queue_length = round(total_queue_length / len(queue_counts), 2)
-        else:
-            average_queue_length = 0
+            SELECT AVG(queue_count) as avg_queue_length
+            FROM (
+                SELECT COUNT(*) as queue_count
+                FROM swimmerWaitQueue 
+                GROUP BY lesson_id
+            ) as queue_counts
+        """)
+        result = cursor.fetchone()
+        average_queue_length = round(result[0], 2) if result[0] else 0
 
         # Save report to database
         try:
@@ -1742,7 +1756,7 @@ def generate_report():
                     average_queue_length
                 ) VALUES (%s, NOW(), %s, %s, %s, %s, %s)
             """, (
-                session['user_id'],  # Changed from session['id'] to session['user_id']
+                session['user_id'],
                 number_of_swimmer,
                 number_of_lifeguard,
                 most_liked_lesson,
@@ -1752,7 +1766,6 @@ def generate_report():
             mysql.connection.commit()
             flash('Report generated and saved successfully!', 'success')
         except Exception as e:
-            # Log the error but don't stop the report from being displayed
             print(f"Error saving report: {e}")
             mysql.connection.rollback()
             flash('Error saving report to database!', 'danger')
