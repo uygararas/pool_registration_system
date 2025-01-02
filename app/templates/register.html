@@ -1,4 +1,4 @@
-<!-- templates/register.html -->
+<!-- app/templates/register.html -->
 {% extends "base.html" %}
 
 {% block title %}Register{% endblock %}
@@ -43,97 +43,45 @@
         <input type="date" class="form-control" name="birth_date" required>
     </div>
 
-    <!-- Role Selection -->
-    <div class="form-group">
-        <label for="role">Role:</label>
-        <select class="form-control" name="role" id="role" required onchange="showRoleFields()">
-            <option value="" disabled selected>Select your role</option>
-            <option value="Employee">Employee</option>
-            <option value="PoolAdmin">Pool Admin</option>
-            <option value="Lifeguard">Lifeguard</option>
-            <option value="Coach">Coach</option>
-            <option value="Swimmer">Swimmer</option>
-            <option value="Member">Member</option>
-        </select>
+    <!-- Membership Checkbox -->
+    <div class="form-group form-check">
+        <input type="checkbox" class="form-check-input" id="is_member" name="is_member" onclick="togglePaymentFields()">
+        <label class="form-check-label" for="is_member">I want to be a Member</label>
     </div>
 
-    <!-- Dynamic Fields Based on Role -->
-    <div id="role-fields"></div>
+    <!-- Payment Information (Initially Hidden) -->
+    <div id="payment-info" style="display: none;">
+        <h4>Membership Payment Details</h4>
+        <div class="form-group">
+            <label for="card_number">Card Number:</label>
+            <input type="text" class="form-control" name="card_number" maxlength="16" pattern="\d{16}" placeholder="1234123412341234">
+        </div>
+        <div class="form-group">
+            <label for="expiry_date">Expiry Date:</label>
+            <input type="month" class="form-control" name="expiry_date">
+        </div>
+        <div class="form-group">
+            <label for="cvv">CVV:</label>
+            <input type="text" class="form-control" name="cvv" maxlength="3" pattern="\d{3}" placeholder="123">
+        </div>
+    </div>
 
     <button type="submit" class="btn btn-primary">Register</button>
 </form>
 <br>
 <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a>.</p>
 
-<!-- JavaScript for dynamic role fields -->
+<!-- JavaScript to Toggle Payment Fields -->
 <script>
-function showRoleFields() {
-    var role = document.getElementById("role").value;
-    var roleFields = document.getElementById("role-fields");
-    roleFields.innerHTML = ""; // Clear previous fields
-
-    if (role === "Employee" || role === "PoolAdmin" || role === "Lifeguard" || role === "Coach") {
-        // Common fields for employees
-        roleFields.innerHTML += `
-            <div class="form-group">
-                <label for="salary">Salary:</label>
-                <input type="number" step="0.01" class="form-control" name="salary" required>
-            </div>
-            <div class="form-group">
-                <label for="emp_date">Employment Date:</label>
-                <input type="date" class="form-control" name="emp_date" required>
-            </div>
-        `;
-    }
-
-    if (role === "PoolAdmin") {
-        roleFields.innerHTML += `
-            <div class="form-group">
-                <label for="department">Department:</label>
-                <input type="text" class="form-control" name="department" required>
-            </div>
-        `;
-    }
-
-    if (role === "Lifeguard") {
-        roleFields.innerHTML += `
-            <div class="form-group">
-                <label for="license_no">License Number:</label>
-                <input type="text" class="form-control" name="license_no" required>
-            </div>
-        `;
-    }
-
-    if (role === "Coach") {
-        roleFields.innerHTML += `
-            <div class="form-group">
-                <label for="rank">Rank:</label>
-                <input type="text" class="form-control" name="rank" required>
-            </div>
-            <div class="form-group">
-                <label for="specialization">Specialization:</label>
-                <input type="text" class="form-control" name="specialization">
-            </div>
-        `;
-    }
-
-    if (role === "Swimmer" || role === "Member") {
-        roleFields.innerHTML += `
-            <div class="form-group">
-                <label for="swimming_level">Swimming Level:</label>
-                <input type="text" class="form-control" name="swimming_level" required>
-            </div>
-        `;
-    }
-
-    if (role === "Member") {
-        roleFields.innerHTML += `
-            <div class="form-group">
-                <label for="free_training_remaining">Free Training Remaining:</label>
-                <input type="number" class="form-control" name="free_training_remaining" value="0" min="0">
-            </div>
-        `;
+function togglePaymentFields() {
+    var isMember = document.getElementById("is_member").checked;
+    var paymentInfo = document.getElementById("payment-info");
+    if (isMember) {
+        paymentInfo.style.display = "block";
+    } else {
+        paymentInfo.style.display = "none";
     }
 }
 </script>
+
 {% endblock %}

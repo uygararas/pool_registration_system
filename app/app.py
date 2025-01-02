@@ -55,15 +55,20 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST' and all(k in request.form for k in ['email', 'password']):
+    if request.method == 'POST' and all(k in request.form for k in ['email', 'password', 'forename', 'surname', 'gender', 'birth_date']):
         email = request.form['email']
         password = request.form['password'] 
         forename = request.form['forename']
         surname = request.form['surname']
         gender = request.form['gender']
         birth_date = request.form['birth_date']
-        role = request.form['role']
+        is_member = 'is_member' in request.form
 
+        # Retrieve payment details if membership is selected
+        card_number = request.form.get('card_number')
+        expiry_date = request.form.get('expiry_date')
+        cvv = request.form.get('cvv')
+        
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         
         # Check if user already exists
@@ -73,74 +78,41 @@ def register():
             flash('Account already exists!', 'danger')
             return render_template('register.html')
         else:
-            # Insert into user table
-            cursor.execute('INSERT INTO user (email, password, forename, surname, gender, birth_date) VALUES (%s, %s, %s, %s, %s, %s)',
-                           (email, password, forename, surname, gender, birth_date))
-            mysql.connection.commit()
-
-            # Get the newly created user_id
-            cursor.execute('SELECT user_id FROM user WHERE email = %s', (email,))
-            user = cursor.fetchone()
-            user_id = user['user_id']
-
-            # Depending on role, insert into respective tables
-            if role == 'Employee':
-                salary = request.form.get('salary')
-                emp_date = request.form.get('emp_date')
-                cursor.execute('INSERT INTO employee (user_id, salary, emp_date) VALUES (%s, %s, %s)',
-                               (user_id, salary, emp_date))
+            try:
+                # Insert into user table
+                cursor.execute('INSERT INTO user (email, password, forename, surname, gender, birth_date) VALUES (%s, %s, %s, %s, %s, %s)',
+                               (email, password, forename, surname, gender, birth_date))
                 mysql.connection.commit()
 
-            elif role == 'PoolAdmin':
-                # PoolAdmin is a type of Employee
-                salary = request.form.get('salary')
-                emp_date = request.form.get('emp_date')
-                department = request.form.get('department')
-                cursor.execute('INSERT INTO employee (user_id, salary, emp_date) VALUES (%s, %s, %s)',
-                               (user_id, salary, emp_date))
-                cursor.execute('INSERT INTO pool_admin (user_id, department) VALUES (%s, %s)',
-                               (user_id, department))
-                mysql.connection.commit()
+                # Get the newly created user_id
+                cursor.execute('SELECT user_id FROM user WHERE email = %s', (email,))
+                user = cursor.fetchone()
+                user_id = user['user_id']
 
-            elif role == 'Lifeguard':
-                salary = request.form.get('salary')
-                emp_date = request.form.get('emp_date')
-                license_no = request.form.get('license_no')
-                cursor.execute('INSERT INTO employee (user_id, salary, emp_date) VALUES (%s, %s, %s)',
-                               (user_id, salary, emp_date))
-                cursor.execute('INSERT INTO lifeguard (user_id, license_no) VALUES (%s, %s)',
-                               (user_id, license_no))
-                mysql.connection.commit()
-
-            elif role == 'Coach':
-                salary = request.form.get('salary')
-                emp_date = request.form.get('emp_date')
-                rank = request.form.get('rank')
-                specialization = request.form.get('specialization')
-                cursor.execute('INSERT INTO employee (user_id, salary, emp_date) VALUES (%s, %s, %s)',
-                               (user_id, salary, emp_date))
-                cursor.execute('INSERT INTO coach (user_id, rank, specialization) VALUES (%s, %s, %s)',
-                               (user_id, rank, specialization))
-                mysql.connection.commit()
-
-            elif role == 'Swimmer':
-                swimming_level = request.form.get('swimming_level')
+                # Insert into swimmer table with default swimming level
                 cursor.execute('INSERT INTO swimmer (user_id, swimming_level) VALUES (%s, %s)',
-                               (user_id, swimming_level))
+                               (user_id, 'Beginner'))
                 mysql.connection.commit()
 
-            elif role == 'Member':
-                # Member is a type of Swimmer
-                swimming_level = request.form.get('swimming_level')
-                free_training_remaining = request.form.get('free_training_remaining', 0)
-                cursor.execute('INSERT INTO swimmer (user_id, swimming_level) VALUES (%s, %s)',
-                               (user_id, swimming_level))
-                cursor.execute('INSERT INTO member (user_id, free_training_remaining) VALUES (%s, %s)',
-                               (user_id, free_training_remaining))
-                mysql.connection.commit()
+                if is_member:
+                    
+                    # Insert into member table
+                    cursor.execute('INSERT INTO member (user_id, free_training_remaining) VALUES (%s, %s)',
+                                   (user_id, 5))  # Assign default free trainings
+                    mysql.connection.commit()
 
-            flash('You have successfully registered!', 'success')
-            return redirect(url_for('login'))
+                    flash('You have successfully registered as a swimmer and become a member!', 'success')
+                else:
+                    flash('You have successfully registered as a swimmer!', 'success')
+                
+                return redirect(url_for('login'))
+            
+            except Exception as e:
+                mysql.connection.rollback()
+                flash(f'An error occurred during registration: {str(e)}', 'danger')
+                return render_template('register.html')
+            finally:
+                cursor.close()
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -1072,6 +1044,62 @@ def swimmer_free_session():
         today = datetime.today().strftime('%Y-%m-%d')
         return render_template('swimmer_free_session.html', pools=pools, today=today)
 
+@app.route('/cancel_free_session/<int:session_id>', methods=['POST'])
+def cancel_free_session(session_id):
+    if 'loggedin' not in session or session.get('role') not in ['Member', 'Swimmer']:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+    
+    swimmer_id = session['user_id']
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    try:
+        # Verify that the session is a free session and not completed
+        cursor.execute("""
+            SELECT fs.session_id, b.isCompleted
+            FROM freeSession fs
+            JOIN booking b ON fs.session_id = b.session_id
+            WHERE fs.session_id = %s AND b.swimmer_id = %s
+        """, (session_id, swimmer_id))
+        session_info = cursor.fetchone()
+        
+        if not session_info:
+            flash('Session not found or you are not enrolled in this free session.', 'danger')
+            return redirect(url_for('swimmer_homepage'))
+        
+        if session_info['isCompleted']:
+            flash('Cannot cancel a session that has already been completed.', 'warning')
+            return redirect(url_for('swimmer_homepage'))
+        
+        # Begin Transaction
+        # 1. Remove from booking
+        cursor.execute("""
+            DELETE FROM booking 
+            WHERE swimmer_id = %s AND session_id = %s
+        """, (swimmer_id, session_id))
+        
+        # 2. Remove from freeSession
+        cursor.execute("""
+            DELETE FROM freeSession 
+            WHERE session_id = %s
+        """, (session_id,))
+        
+        # 3. Remove from session
+        cursor.execute("""
+            DELETE FROM session 
+            WHERE session_id = %s
+        """, (session_id,))
+        
+        # Commit Transaction
+        mysql.connection.commit()
+        flash('Free session canceled successfully!', 'success')
+    except Exception as e:
+        mysql.connection.rollback()
+        flash(f'An error occurred while canceling the free session: {str(e)}', 'danger')
+    finally:
+        cursor.close()
+    
+    return redirect(url_for('swimmer_homepage'))
 
 @app.route('/swimmer_one_to_one_trainings')
 def swimmer_one_to_one_trainings():

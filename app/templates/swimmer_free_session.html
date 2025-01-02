@@ -42,11 +42,30 @@
     
     <div class="form-group">
       <label for="payment_method">Select Payment Method:</label>
-      <select class="form-control" id="payment_method" name="payment_method" required>
+      <select class="form-control" id="payment_method" name="payment_method" required onchange="toggleCreditCardFields()">
         <option value="" disabled selected>Select a payment method</option>
         <option value="CreditCard">Credit Card</option>
         <option value="Cash">Cash</option>
       </select>
+    </div>
+    
+    <!-- Conditional Credit Card Fields -->
+    <div id="credit_card_info" style="display: none;">
+      <h4>Credit Card Details</h4>
+      <div class="form-group">
+        <label for="card_number">Card Number:</label>
+        <input type="text" class="form-control" id="card_number" name="card_number" maxlength="16" pattern="\d{16}" placeholder="1234123412341234">
+      </div>
+      <div class="form-row">
+        <div class="form-group col-md-6">
+          <label for="expiry_date">Expiry Date:</label>
+          <input type="month" class="form-control" id="expiry_date" name="expiry_date">
+        </div>
+        <div class="form-group col-md-6">
+          <label for="cvv">CVV:</label>
+          <input type="text" class="form-control" id="cvv" name="cvv" maxlength="3" pattern="\d{3}" placeholder="123">
+        </div>
+      </div>
     </div>
     
     <div class="form-group">
@@ -76,6 +95,17 @@
           var cost = diffMins * 5;
           costField.value =  cost.toFixed(2) + ' TL';
         }
+      }
+    }
+    
+    function toggleCreditCardFields() {
+      var paymentMethod = document.getElementById('payment_method').value;
+      var creditCardInfo = document.getElementById('credit_card_info');
+      
+      if (paymentMethod === 'CreditCard') {
+        creditCardInfo.style.display = 'block';
+      } else {
+        creditCardInfo.style.display = 'none';
       }
     }
   </script>

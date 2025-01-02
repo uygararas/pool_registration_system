@@ -29,6 +29,7 @@
                     <th>End Time</th>
                     <th>Pool Location</th>
                     <th>IsPaymentCompleted</th>
+                    <th>Actions</th> <!-- New Actions Column -->
                 </tr>
             </thead>
             <tbody>
@@ -42,6 +43,17 @@
                         <td>{{ session.end_time }}</td>
                         <td>{{ session.pool_location }}</td>
                         <td>{{ "PaymentSuccessful" if session.isPaymentCompleted else "WaitingPayment" }}</td>
+                        <td>
+                            {% if session.session_type == 'Free Training' %}
+                                <form method="POST" action="{{ url_for('cancel_free_session', session_id=session.session_id) }}" onsubmit="return confirm('Are you sure you want to cancel this free session?');">
+                                    <button type="submit" class="btn btn-danger btn-sm">Cancel Free Session</button>
+                                </form>
+                            {% elif session.session_type == 'Lesson' %}
+                                <form method="POST" action="{{ url_for('exit_lesson', session_id=session.session_id) }}" onsubmit="return confirm('Are you sure you want to exit this lesson?');">
+                                    <button type="submit" class="btn btn-danger btn-sm">Exit Lesson</button>
+                                </form>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
