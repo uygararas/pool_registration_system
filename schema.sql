@@ -177,6 +177,19 @@ CREATE TABLE IF NOT EXISTS lessonReview (
     FOREIGN KEY (lesson_id) REFERENCES lesson(session_id) ON DELETE CASCADE
 );
 
+
+CREATE TABLE admin_report (
+    report_id INT PRIMARY KEY AUTO_INCREMENT,
+    admin_id INT NOT NULL,
+    report_date DATETIME NOT NULL,
+    number_of_swimmers INT, 
+    number_of_lifeguards INT,
+    most_liked_lesson VARCHAR(255),
+    most_liked_coach VARCHAR(255),
+    average_queue_length DECIMAL(10,2),
+    FOREIGN KEY (admin_id) REFERENCES user(user_id)
+);
+
 -- 4.21 SwimmerWaitQueue Table
 CREATE TABLE IF NOT EXISTS swimmerWaitQueue (
     swimmer_id INT NOT NULL,
@@ -186,6 +199,7 @@ CREATE TABLE IF NOT EXISTS swimmerWaitQueue (
     FOREIGN KEY (swimmer_id) REFERENCES member(user_id) ON DELETE CASCADE,
     FOREIGN KEY (lesson_id) REFERENCES lesson(session_id) ON DELETE CASCADE
 );
+
 
 -- Views
 CREATE VIEW SessionsWithoutLifeguard AS
@@ -355,6 +369,6 @@ INSERT INTO booking (swimmer_id, session_id, isCompleted, paymentMethod, isPayme
 (5, 1, FALSE, 'Cash', FALSE),
 (5, 2, TRUE, 'CreditCard', TRUE),
 (6, 3, FALSE, 'Cash', FALSE),
-(6, 4, FALSE, 'CreditCard', FALSE),
+(6, 4, FALSE, 'CreditCard', TRUE),
 (7, 5, TRUE, 'Cash', TRUE);
 

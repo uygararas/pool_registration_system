@@ -1367,7 +1367,6 @@ def create_employee():
 @app.route('/generate_report')
 def generate_report():
     if 'loggedin' in session and session.get('role') == 'Admin':
-        # Generate data for the report
         cursor = mysql.connection.cursor()
         
         # Number of swimmers
@@ -1404,12 +1403,50 @@ def generate_report():
         most_liked_coach = cursor.fetchone()
         most_liked_coach = f"{most_liked_coach[0]} {most_liked_coach[1]}" if most_liked_coach else "No data"
 
-        # Average queue length
-        cursor.execute("SELECT AVG(number_of_waiting) FROM waitQueue")
-        average_queue_length = cursor.fetchone()[0]
-        average_queue_length = round(average_queue_length, 2) if average_queue_length else 0
+        # Average queue length - UPDATED QUERY
+        cursor.execute("""
+            SELECT COUNT(*) as queue_count, lesson_id 
+            FROM swimmerWaitQueue 
+            GROUP BY lesson_id
+            """)
+        queue_counts = cursor.fetchall()
+        
+        # Calculate average queue length
+        if queue_counts:
+            total_queue_length = sum(count[0] for count in queue_counts)
+            average_queue_length = round(total_queue_length / len(queue_counts), 2)
+        else:
+            average_queue_length = 0
 
-        cursor.close()
+        # Save report to database
+        try:
+            cursor.execute("""
+                INSERT INTO admin_report (
+                    admin_id,
+                    report_date,
+                    number_of_swimmers,
+                    number_of_lifeguards,
+                    most_liked_lesson,
+                    most_liked_coach,
+                    average_queue_length
+                ) VALUES (%s, NOW(), %s, %s, %s, %s, %s)
+            """, (
+                session['user_id'],  # Changed from session['id'] to session['user_id']
+                number_of_swimmer,
+                number_of_lifeguard,
+                most_liked_lesson,
+                most_liked_coach,
+                average_queue_length
+            ))
+            mysql.connection.commit()
+            flash('Report generated and saved successfully!', 'success')
+        except Exception as e:
+            # Log the error but don't stop the report from being displayed
+            print(f"Error saving report: {e}")
+            mysql.connection.rollback()
+            flash('Error saving report to database!', 'danger')
+        finally:
+            cursor.close()
         
         return render_template(
             'generate_report.html',
@@ -1419,6 +1456,24 @@ def generate_report():
             most_liked_coach=most_liked_coach,
             average_queue_length=average_queue_length
         )
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+@app.route('/view_reports')
+def view_reports():
+    if 'loggedin' in session and session.get('role') == 'Admin':
+        cursor = mysql.connection.cursor()
+        cursor.execute("""
+            SELECT r.*, u.forename, u.surname 
+            FROM admin_report r
+            JOIN user u ON r.admin_id = u.user_id
+            ORDER BY r.report_date DESC
+        """)
+        reports = cursor.fetchall()
+        cursor.close()
+        
+        return render_template('view_reports.html', reports=reports)
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
