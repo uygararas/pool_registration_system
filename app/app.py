@@ -1321,6 +1321,22 @@ def create_lesson():
                 flash('You already have a lesson scheduled during this time.', 'danger')
                 return redirect(url_for('create_lesson'))
             
+            # Check for conflicts with one-to-one trainings
+            cursor.execute("""
+                SELECT * FROM session s
+                JOIN oneToOneTraining o ON s.session_id = o.session_id
+                WHERE o.coach_id = %s AND s.date = %s
+                AND (
+                    (s.start_time < %s AND s.end_time > %s) OR
+                    (s.start_time >= %s AND s.end_time <= %s)
+                )
+            """, (coach_id, class_date, end_time, start_time, start_time, end_time))
+            training_conflict = cursor.fetchone()
+
+            if training_conflict:
+                flash('Conflict detected: You already have a one-to-one training scheduled during this time.', 'danger')
+                return redirect(url_for('create_lesson'))
+
             # Insert into session table
             try:
                 cursor.execute("""
@@ -1399,6 +1415,23 @@ def edit_lesson(lesson_id):
                 flash('You already have another lesson scheduled during this time.', 'danger')
                 return redirect(url_for('edit_lesson', lesson_id=lesson_id))
             
+            # Check for conflicts with one-to-one trainings
+            cursor.execute("""
+                SELECT * FROM session s
+                JOIN oneToOneTraining o ON s.session_id = o.session_id
+                WHERE o.coach_id = %s AND s.date = %s
+                AND s.session_id != %s
+                AND (
+                    (s.start_time < %s AND s.end_time > %s) OR
+                    (s.start_time >= %s AND s.end_time <= %s)
+                )
+            """, (coach_id, date, lesson_id, end_time, start_time, start_time, end_time))
+            training_conflict = cursor.fetchone()
+
+            if training_conflict:
+                flash('Conflict detected: You already have a one-to-one training scheduled during this time.', 'danger')
+                return redirect(url_for('edit_lesson', lesson_id=lesson_id))
+
             try:
                 # Update session table
                 cursor.execute("""
@@ -1513,6 +1546,22 @@ def create_one_to_one_training():
                 flash('Conflict detected: Another session overlaps with the selected time and lane.', 'danger')
                 return redirect(url_for('create_one_to_one_training'))
 
+            # Check for conflicts with lessons
+            cursor.execute("""
+                SELECT * FROM session s
+                JOIN lesson l ON s.session_id = l.session_id
+                WHERE l.coach_id = %s AND s.date = %s
+                AND (
+                    (s.start_time < %s AND s.end_time > %s) OR
+                    (s.start_time >= %s AND s.end_time <= %s)
+                )
+            """, (coach_id, training_date, end_time, start_time, start_time, end_time))
+            lesson_conflict = cursor.fetchone()
+
+            if lesson_conflict:
+                flash('Conflict detected: You already have a lesson scheduled during this time.', 'danger')
+                return redirect(url_for('create_one_to_one_training'))
+
             # Insert into session table
             try:
                 cursor.execute("""
@@ -1581,6 +1630,23 @@ def edit_one_to_one_training(training_id):
 
             if conflict:
                 flash('Conflict detected: You already have another session scheduled during this time.', 'danger')
+                return redirect(url_for('edit_one_to_one_training', training_id=training_id))
+
+            # Check for conflicts with lessons
+            cursor.execute("""
+                SELECT * FROM session s
+                JOIN lesson l ON s.session_id = l.session_id
+                WHERE l.coach_id = %s AND s.date = %s
+                AND s.session_id != %s
+                AND (
+                    (s.start_time < %s AND s.end_time > %s) OR
+                    (s.start_time >= %s AND s.end_time <= %s)
+                )
+            """, (coach_id, training_date, training_id, end_time, start_time, start_time, end_time))
+            lesson_conflict = cursor.fetchone()
+
+            if lesson_conflict:
+                flash('Conflict detected: You already have a lesson scheduled during this time.', 'danger')
                 return redirect(url_for('edit_one_to_one_training', training_id=training_id))
 
             try:
@@ -1753,7 +1819,6 @@ def create_employee():
 @app.route('/generate_report')
 def generate_report():
     if 'loggedin' in session and session.get('role') == 'Admin':
-        # Generate data for the report
         cursor = mysql.connection.cursor()
         
         # Number of swimmers
@@ -1770,32 +1835,83 @@ def generate_report():
         FROM lesson l
         JOIN lessonReview lr ON l.session_id = lr.lesson_id
         JOIN review r ON lr.review_id = r.review_id
-        GROUP BY l.session_id
-        ORDER BY AVG(r.rating) DESC
+        GROUP BY l.session_id, l.session_type
+        HAVING AVG(r.rating) = (
+            SELECT MAX(avg_rating)
+            FROM (
+                SELECT AVG(r2.rating) as avg_rating
+                FROM lesson l2
+                JOIN lessonReview lr2 ON l2.session_id = lr2.lesson_id
+                JOIN review r2 ON lr2.review_id = r2.review_id
+                GROUP BY l2.session_id
+            ) as avg_ratings
+        )
         LIMIT 1;
         """)
         most_liked_lesson = cursor.fetchone()
         most_liked_lesson = most_liked_lesson[0] if most_liked_lesson else "No data"
 
-        # Most liked coach
+        # Most liked coach - UPDATED to use MAX
         cursor.execute("""
         SELECT u.forename, u.surname
         FROM user u
         JOIN coachReview cr ON u.user_id = cr.coach_id
         JOIN review r ON cr.review_id = r.review_id
-        GROUP BY u.user_id
-        ORDER BY AVG(r.rating) DESC
+        GROUP BY u.user_id, u.forename, u.surname
+        HAVING AVG(r.rating) = (
+            SELECT MAX(avg_rating)
+            FROM (
+                SELECT AVG(r2.rating) as avg_rating
+                FROM coachReview cr2
+                JOIN review r2 ON cr2.review_id = r2.review_id
+                GROUP BY cr2.coach_id
+            ) as avg_ratings
+        )
         LIMIT 1
         """)
         most_liked_coach = cursor.fetchone()
         most_liked_coach = f"{most_liked_coach[0]} {most_liked_coach[1]}" if most_liked_coach else "No data"
 
-        # Average queue length
-        cursor.execute("SELECT AVG(number_of_waiting) FROM waitQueue")
-        average_queue_length = cursor.fetchone()[0]
-        average_queue_length = round(average_queue_length, 2) if average_queue_length else 0
+        # Average queue length - Using COUNT and AVG
+        cursor.execute("""
+            SELECT AVG(queue_count) as avg_queue_length
+            FROM (
+                SELECT COUNT(*) as queue_count
+                FROM swimmerWaitQueue 
+                GROUP BY lesson_id
+            ) as queue_counts
+        """)
+        result = cursor.fetchone()
+        average_queue_length = round(result[0], 2) if result[0] else 0
 
-        cursor.close()
+        # Save report to database
+        try:
+            cursor.execute("""
+                INSERT INTO admin_report (
+                    admin_id,
+                    report_date,
+                    number_of_swimmers,
+                    number_of_lifeguards,
+                    most_liked_lesson,
+                    most_liked_coach,
+                    average_queue_length
+                ) VALUES (%s, NOW(), %s, %s, %s, %s, %s)
+            """, (
+                session['user_id'],
+                number_of_swimmer,
+                number_of_lifeguard,
+                most_liked_lesson,
+                most_liked_coach,
+                average_queue_length
+            ))
+            mysql.connection.commit()
+            flash('Report generated and saved successfully!', 'success')
+        except Exception as e:
+            print(f"Error saving report: {e}")
+            mysql.connection.rollback()
+            flash('Error saving report to database!', 'danger')
+        finally:
+            cursor.close()
         
         return render_template(
             'generate_report.html',
@@ -1805,6 +1921,24 @@ def generate_report():
             most_liked_coach=most_liked_coach,
             average_queue_length=average_queue_length
         )
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
+
+@app.route('/view_reports')
+def view_reports():
+    if 'loggedin' in session and session.get('role') == 'Admin':
+        cursor = mysql.connection.cursor()
+        cursor.execute("""
+            SELECT r.*, u.forename, u.surname 
+            FROM admin_report r
+            JOIN user u ON r.admin_id = u.user_id
+            ORDER BY r.report_date DESC
+        """)
+        reports = cursor.fetchall()
+        cursor.close()
+        
+        return render_template('view_reports.html', reports=reports)
     else:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))

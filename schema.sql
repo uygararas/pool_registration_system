@@ -179,6 +179,19 @@ CREATE TABLE IF NOT EXISTS lessonReview (
     FOREIGN KEY (lesson_id) REFERENCES lesson(session_id) ON DELETE CASCADE
 );
 
+-- 4.20 Admin Report Table
+CREATE TABLE admin_report (
+    report_id INT PRIMARY KEY AUTO_INCREMENT,
+    admin_id INT NOT NULL,
+    report_date DATETIME NOT NULL,
+    number_of_swimmers INT, 
+    number_of_lifeguards INT,
+    most_liked_lesson VARCHAR(255),
+    most_liked_coach VARCHAR(255),
+    average_queue_length DECIMAL(10,2),
+    FOREIGN KEY (admin_id) REFERENCES user(user_id)
+);
+
 -- 4.21 SwimmerWaitQueue Table
 CREATE TABLE IF NOT EXISTS swimmerWaitQueue (
     swimmer_id INT NOT NULL,
