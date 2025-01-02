@@ -924,14 +924,155 @@ def quit_queue(session_id):
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
-@app.route('/swimmer_free_session')
+@app.route('/swimmer_free_session', methods=['GET', 'POST'])
 def swimmer_free_session():
-    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
-        forename = session.get('forename', 'Member')
-        return render_template('swimmer_free_session.html', forename=forename)
-    else:
+    if 'loggedin' not in session or session.get('role') not in ['Member', 'Swimmer']:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
+    
+    forename = session.get('forename', 'Member')
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    if request.method == 'POST':
+        # Retrieve form data
+        pool_id = request.form.get('pool_id')
+        lane_no = request.form.get('lane_no')  # Fixed to 1-6
+        date_str = request.form.get('date')
+        start_time_str = request.form.get('start_time')
+        end_time_str = request.form.get('end_time')
+        payment_method = request.form.get('payment_method')
+        cost_str = request.form.get('cost')
+        
+        # Validate input
+        if not all([pool_id, lane_no, date_str, start_time_str, end_time_str, payment_method, cost_str]):
+            flash('Please fill out all fields.', 'warning')
+            return redirect(url_for('swimmer_free_session'))
+        
+        try:
+            # Convert lane_no to integer and validate
+            lane_no = int(lane_no)
+            if lane_no < 1 or lane_no > 6:
+                flash('Invalid lane number selected.', 'danger')
+                return redirect(url_for('swimmer_free_session'))
+        except ValueError:
+            flash('Invalid lane number.', 'danger')
+            return redirect(url_for('swimmer_free_session'))
+        
+        try:
+            # Parse date and time
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            start_time = datetime.strptime(start_time_str, '%H:%M').time()
+            end_time = datetime.strptime(end_time_str, '%H:%M').time()
+            
+            # Calculate duration in minutes
+            start_datetime = datetime.combine(date, start_time)
+            end_datetime = datetime.combine(date, end_time)
+            duration = (end_datetime - start_datetime).total_seconds() / 60
+            if duration <= 0:
+                flash('End time must be after start time.', 'danger')
+                return redirect(url_for('swimmer_free_session'))
+            
+            # Calculate cost (should already be calculated on frontend)
+            cost = duration * 5
+            
+        except ValueError:
+            flash('Invalid date or time format.', 'danger')
+            return redirect(url_for('swimmer_free_session'))
+        
+        swimmer_id = session['user_id']
+        
+        try:
+            # Check for session conflicts in the same pool and lane
+            cursor.execute("""
+                SELECT * FROM session
+                WHERE pool_id = %s AND lane_no = %s AND date = %s
+                  AND (
+                      (start_time < %s AND end_time > %s) OR
+                      (start_time < %s AND end_time > %s) OR
+                      (start_time >= %s AND end_time <= %s)
+                  )
+            """, (
+                pool_id, lane_no, date,
+                end_time_str, start_time_str,
+                end_time_str, start_time_str,
+                start_time_str, end_time_str
+            ))
+            conflict_session = cursor.fetchone()
+            if conflict_session:
+                flash('Selected lane and time conflict with an existing session.', 'danger')
+                return redirect(url_for('swimmer_free_session'))
+            
+            # Check for swimmer's session conflicts
+            cursor.execute("""
+                SELECT s.session_id, s.date, s.start_time, s.end_time
+                FROM booking b
+                JOIN session s ON b.session_id = s.session_id
+                WHERE b.swimmer_id = %s AND s.date = %s
+                  AND (
+                      (s.start_time < %s AND s.end_time > %s) OR
+                      (s.start_time < %s AND s.end_time > %s) OR
+                      (s.start_time >= %s AND s.end_time <= %s)
+                  )
+            """, (
+                swimmer_id, date,
+                end_time_str, start_time_str,
+                end_time_str, start_time_str,
+                start_time_str, end_time_str
+            ))
+            swimmer_conflict = cursor.fetchone()
+            if swimmer_conflict:
+                flash('You have another session that conflicts with the selected time.', 'danger')
+                return redirect(url_for('swimmer_free_session'))
+            
+            # Create a new session
+            cursor.execute("""
+                INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (f'{forename}\'s Free Session', pool_id, lane_no, date, start_time_str, end_time_str, cost))
+            new_session_id = cursor.lastrowid
+            
+            # Create a booking
+            cursor.execute("""
+                INSERT INTO booking (swimmer_id, session_id, isCompleted, paymentMethod, isPaymentCompleted)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                swimmer_id,
+                new_session_id,
+                False,
+                payment_method,
+                True if payment_method == 'CreditCard' else False  # Assuming Cash payments are not completed
+            ))
+
+            cursor.execute("""
+                INSERT INTO freeSession (session_id) VALUES (%s)
+            """, (new_session_id,))
+
+            mysql.connection.commit()
+            flash('Free session booked successfully!', 'success')
+            return redirect(url_for('swimmer_homepage'))
+        
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f'An error occurred while booking the session: {str(e)}', 'danger')
+            return redirect(url_for('swimmer_free_session'))
+        finally:
+            cursor.close()
+    
+    else:
+        # GET request: Render the booking form
+        try:
+            cursor.execute("SELECT pool_id, location FROM pool ORDER BY location ASC")
+            pools = cursor.fetchall()
+        except Exception as e:
+            flash(f'Error fetching pools: {str(e)}', 'danger')
+            pools = []
+        finally:
+            cursor.close()
+        
+        today = datetime.today().strftime('%Y-%m-%d')
+        return render_template('swimmer_free_session.html', pools=pools, today=today)
+
+
 @app.route('/swimmer_one_to_one_trainings')
 def swimmer_one_to_one_trainings():
     if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
