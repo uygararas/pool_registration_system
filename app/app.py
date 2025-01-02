@@ -988,7 +988,6 @@ def coach_homepage():
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
-
 @app.route('/create_lesson', methods=['GET', 'POST'])
 def create_lesson():
     if 'loggedin' in session and session.get('role') == 'Coach':
@@ -1000,8 +999,8 @@ def create_lesson():
             pool_id = request.form['pool_id']
             lane_no = request.form['lane_no']
             capacity = request.form['capacity']
-            session_type = request.form['session_type']  # New field
-            price = request.form['price']  # New price field
+            session_type = request.form['session_type']
+            price = request.form['price']
             
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             
@@ -1021,10 +1020,30 @@ def create_lesson():
                 flash('Conflict detected: Another session overlaps with the selected time and lane.', 'danger')
                 return redirect(url_for('create_lesson'))
             
+            # Check for coach schedule conflict
+            coach_id = session['user_id']
+            cursor.execute("""
+                SELECT * FROM session s
+                JOIN lesson l ON s.session_id = l.session_id
+                WHERE l.coach_id = %s AND s.date = %s
+                  AND (
+                      (s.start_time < %s AND s.end_time > %s) OR
+                      (s.start_time < %s AND s.end_time > %s) OR
+                      (s.start_time >= %s AND s.end_time <= %s)
+                  )
+            """, (coach_id, class_date, end_time, start_time, end_time, start_time, start_time, end_time))
+            coach_conflict = cursor.fetchone()
+            
+            if coach_conflict:
+                flash('You already have a lesson scheduled during this time.', 'danger')
+                return redirect(url_for('create_lesson'))
+            
             # Insert into session table
             try:
-                cursor.execute('INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time) VALUES (%s, %s, %s, %s, %s, %s)',
-                               (description, pool_id, lane_no, class_date, start_time, end_time))
+                cursor.execute("""
+                    INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (description, pool_id, lane_no, class_date, start_time, end_time))
                 mysql.connection.commit()
                 session_id = cursor.lastrowid  # Get the generated session_id
             except Exception as e:
@@ -1034,9 +1053,10 @@ def create_lesson():
             
             # Insert into lesson table
             try:
-                coach_id = session['user_id']
-                cursor.execute('INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price) VALUES (%s, %s, %s, %s, %s, %s)',
-                               (session_id, coach_id, 0, capacity, session_type, price))
+                cursor.execute("""
+                    INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (session_id, coach_id, 0, capacity, session_type, price))
                 mysql.connection.commit()
             except Exception as e:
                 mysql.connection.rollback()
@@ -1075,6 +1095,26 @@ def edit_lesson(lesson_id):
             lane_no = request.form['lane_no']
             session_type = request.form['session_type']
             price = request.form['price']  # New price field
+            coach_id = session['user_id']  # Current coach ID
+            
+            # Check for conflicts with other lessons
+            cursor.execute("""
+                SELECT s.session_id 
+                FROM session s
+                JOIN lesson l ON s.session_id = l.session_id
+                WHERE l.coach_id = %s AND s.date = %s
+                  AND s.session_id != %s
+                  AND (
+                      (s.start_time < %s AND s.end_time > %s) OR
+                      (s.start_time < %s AND s.end_time > %s) OR
+                      (s.start_time >= %s AND s.end_time <= %s)
+                  )
+            """, (coach_id, date, lesson_id, end_time, start_time, end_time, start_time, start_time, end_time))
+            conflict = cursor.fetchone()
+            
+            if conflict:
+                flash('You already have another lesson scheduled during this time.', 'danger')
+                return redirect(url_for('edit_lesson', lesson_id=lesson_id))
             
             try:
                 # Update session table
@@ -1157,44 +1197,64 @@ def create_one_to_one_training():
             price = request.form['price']  # New price field
 
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-            
-            # Validate Pool and Lane
+
+            # Validate Coach Schedule Conflict
+            coach_id = session['user_id']
+            cursor.execute("""
+                SELECT * FROM session s
+                JOIN oneToOneTraining o ON s.session_id = o.session_id
+                WHERE o.coach_id = %s AND s.date = %s
+                  AND (
+                      (s.start_time < %s AND s.end_time > %s) OR
+                      (s.start_time >= %s AND s.end_time <= %s)
+                  )
+            """, (coach_id, training_date, end_time, start_time, start_time, end_time))
+            conflict = cursor.fetchone()
+
+            if conflict:
+                flash('Conflict detected: You already have another session scheduled during this time.', 'danger')
+                return redirect(url_for('create_one_to_one_training'))
+
+            # Validate Pool and Lane Conflict
             cursor.execute("""
                 SELECT * FROM session 
                 WHERE pool_id = %s AND lane_no = %s AND date = %s
                   AND (
                       (start_time < %s AND end_time > %s) OR
-                      (start_time < %s AND end_time > %s) OR
                       (start_time >= %s AND end_time <= %s)
                   )
-            """, (pool_id, lane_no, training_date, end_time, start_time, end_time, start_time, start_time, end_time))
-            conflict = cursor.fetchone()
+            """, (pool_id, lane_no, training_date, end_time, start_time, start_time, end_time))
+            pool_conflict = cursor.fetchone()
 
-            if conflict:
+            if pool_conflict:
                 flash('Conflict detected: Another session overlaps with the selected time and lane.', 'danger')
                 return redirect(url_for('create_one_to_one_training'))
-            
+
+            # Insert into session table
             try:
-                cursor.execute('INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time) VALUES (%s, %s, %s, %s, %s, %s)',
-                               (description, pool_id, lane_no, training_date, start_time, end_time))
+                cursor.execute("""
+                    INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (description, pool_id, lane_no, training_date, start_time, end_time))
                 mysql.connection.commit()
                 session_id = cursor.lastrowid
             except Exception as e:
                 mysql.connection.rollback()
                 flash(f'Error creating session: {str(e)}', 'danger')
                 return redirect(url_for('create_one_to_one_training'))
-            
+
+            # Insert into oneToOneTraining table
             try:
-                coach_id = session['user_id']
-                cursor.execute('INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style, price) VALUES (%s, %s, %s, %s)',
-                               (session_id, coach_id, swimming_style, price))
+                cursor.execute("""
+                    INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style, price)
+                    VALUES (%s, %s, %s, %s)
+                """, (session_id, coach_id, swimming_style, price))
                 mysql.connection.commit()
                 flash('One-to-One Training created successfully!', 'success')
                 return redirect(url_for('homepage'))
             except Exception as e:
                 mysql.connection.rollback()
                 flash(f'Error creating training: {str(e)}', 'danger')
-                return redirect(url_for('create_one_to_one_training'))
         else:
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             cursor.execute("""
@@ -1221,7 +1281,25 @@ def edit_one_to_one_training(training_id):
             lane_no = request.form['lane_no']
             swimming_style = request.form['swimming_style']
             price = request.form['price']  # New price field
-            
+            coach_id = session['user_id']
+
+            # Validate Coach Schedule Conflict
+            cursor.execute("""
+                SELECT * FROM session s
+                JOIN oneToOneTraining o ON s.session_id = o.session_id
+                WHERE o.coach_id = %s AND s.date = %s
+                  AND s.session_id != %s
+                  AND (
+                      (s.start_time < %s AND s.end_time > %s) OR
+                      (s.start_time >= %s AND s.end_time <= %s)
+                  )
+            """, (coach_id, training_date, training_id, end_time, start_time, start_time, end_time))
+            conflict = cursor.fetchone()
+
+            if conflict:
+                flash('Conflict detected: You already have another session scheduled during this time.', 'danger')
+                return redirect(url_for('edit_one_to_one_training', training_id=training_id))
+
             try:
                 # Update session table
                 cursor.execute("""
@@ -1229,14 +1307,14 @@ def edit_one_to_one_training(training_id):
                     SET description = %s, date = %s, start_time = %s, end_time = %s, pool_id = %s, lane_no = %s
                     WHERE session_id = %s
                 """, (description, training_date, start_time, end_time, pool_id, lane_no, training_id))
-                
+
                 # Update oneToOneTraining table
                 cursor.execute("""
                     UPDATE oneToOneTraining
                     SET swimming_style = %s, price = %s
                     WHERE session_id = %s
                 """, (swimming_style, price, training_id))
-                
+
                 mysql.connection.commit()
                 flash('Training updated successfully!', 'success')
                 return redirect(url_for('homepage'))
@@ -1252,7 +1330,7 @@ def edit_one_to_one_training(training_id):
                 WHERE s.session_id = %s
             """, (training_id,))
             training = cursor.fetchone()
-            
+
             # Fetch pools and lanes
             cursor.execute("""
                 SELECT pool.pool_id, pool.location, COUNT(lane.lane_no) AS lane_count
