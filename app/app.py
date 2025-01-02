@@ -825,6 +825,7 @@ def exit_lesson(session_id):
             mysql.connection.rollback()
             flash(f'Error exiting lesson: {str(e)}', 'danger')
         
+        
         return redirect(url_for('swimmer_lessons'))
     else:
         flash('Unauthorized access!', 'danger')
@@ -1250,6 +1251,41 @@ def process_one_to_one_training_payment(session_id):
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
+
+@app.route('/cancel_one_to_one_training/<int:session_id>', methods=['POST'])
+def cancel_one_to_one_training(session_id):
+    if 'loggedin' in session and (session.get('role') == 'Member' or session.get('role') == 'Swimmer'):
+        swimmer_id = session['user_id']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Check if the swimmer is enrolled in this One-to-One Training session
+        cursor.execute('SELECT * FROM booking WHERE swimmer_id = %s AND session_id = %s', (swimmer_id, session_id))
+        booking = cursor.fetchone()
+        
+        if not booking:
+            flash('You are not enrolled in this one-to-one training session.', 'warning')
+            cursor.close()
+            return redirect(url_for('swimmer_homepage'))
+        
+        try:
+            # Delete the booking
+            cursor.execute('DELETE FROM booking WHERE swimmer_id = %s AND session_id = %s', (swimmer_id, session_id))
+            
+            # Optionally, handle any additional cleanup if necessary
+            # For example, if there's a separate table tracking One-to-One Trainings, handle it here
+            
+            mysql.connection.commit()
+            flash('Successfully canceled the one-to-one training session.', 'success')
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f'Error canceling training session: {str(e)}', 'danger')
+        finally:
+            cursor.close()
+        
+        return redirect(url_for('swimmer_homepage'))
+    else:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('login'))
 #end of swimmer/member functions
 
 #################################################################

@@ -10,11 +10,6 @@
     <a href="{{ url_for('swimmer_one_to_one_trainings') }}" class="btn btn-success">Enroll/Cancel One-to-One Training</a>
   </div>
 
-  <!-- Logout Button -->
-  <div class="mt-4">
-    <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
-  </div>
-
   <div class="booked-sessions mt-5">
     <h3>Upcoming Sessions</h3>
     {% if upcoming_sessions %}
@@ -50,7 +45,11 @@
                                 </form>
                             {% elif session.session_type == 'Lesson' %}
                                 <form method="POST" action="{{ url_for('exit_lesson', session_id=session.session_id) }}" onsubmit="return confirm('Are you sure you want to exit this lesson?');">
-                                    <button type="submit" class="btn btn-danger btn-sm">Exit Lesson</button>
+                                    <button type="submit" class="btn btn-danger btn-sm">Cancel Lesson</button>
+                                </form>
+                            {% elif session.session_type == 'One-to-One Training' %}
+                                <form method="POST" action="{{ url_for('cancel_one_to_one_training', session_id=session.session_id) }}" onsubmit="return confirm('Are you sure you want to cancel this one-to-one training?');">
+                                    <button type="submit" class="btn btn-danger btn-sm">Cancel Training</button>
                                 </form>
                             {% endif %}
                         </td>
