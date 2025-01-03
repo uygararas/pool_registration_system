@@ -1329,36 +1329,67 @@ def coach_homepage():
         forename = session.get('forename', 'Coach')
         coach_id = session['user_id']
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        current_date = datetime.now().date()
+        current_time = datetime.now().time()
 
-        # Fetch Lessons (General Classes)
+        # Fetch Past Lessons
         cursor.execute("""
             SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, 
                    s.pool_id, s.lane_no, l.session_type, l.price
             FROM lesson l
             JOIN session s ON l.session_id = s.session_id
             WHERE l.coach_id = %s
-        """, (coach_id,))
-        lessons = cursor.fetchall()
+            AND (s.date < %s OR (s.date = %s AND s.start_time < %s))
+            ORDER BY s.date DESC, s.start_time DESC
+        """, (coach_id, current_date, current_date, current_time))
+        past_lessons = cursor.fetchall()
 
-        # Fetch One-to-One Trainings
+        # Fetch Future Lessons
+        cursor.execute("""
+            SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, 
+                   s.pool_id, s.lane_no, l.session_type, l.price
+            FROM lesson l
+            JOIN session s ON l.session_id = s.session_id
+            WHERE l.coach_id = %s
+            AND (s.date > %s OR (s.date = %s AND s.start_time >= %s))
+            ORDER BY s.date ASC, s.start_time ASC
+        """, (coach_id, current_date, current_date, current_time))
+        future_lessons = cursor.fetchall()
+
+        # Fetch Past One-to-One Trainings
         cursor.execute("""
             SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, 
                    s.pool_id, s.lane_no, o.swimming_style, o.price
             FROM oneToOneTraining o
             JOIN session s ON o.session_id = s.session_id
             WHERE o.coach_id = %s
-        """, (coach_id,))
-        one_to_one_trainings = cursor.fetchall()
+            AND (s.date < %s OR (s.date = %s AND s.start_time < %s))
+            ORDER BY s.date DESC, s.start_time DESC
+        """, (coach_id, current_date, current_date, current_time))
+        past_trainings = cursor.fetchall()
 
-        # Get the current date and time
-        current_date = datetime.now().date()
-        current_time = datetime.now().time()
+        # Fetch Future One-to-One Trainings
+        cursor.execute("""
+            SELECT s.session_id, s.description, s.date, s.start_time, s.end_time, 
+                   s.pool_id, s.lane_no, o.swimming_style, o.price
+            FROM oneToOneTraining o
+            JOIN session s ON o.session_id = s.session_id
+            WHERE o.coach_id = %s
+            AND (s.date > %s OR (s.date = %s AND s.start_time >= %s))
+            ORDER BY s.date ASC, s.start_time ASC
+        """, (coach_id, current_date, current_date, current_time))
+        future_trainings = cursor.fetchall()
 
+        cursor.close()
+        
         return render_template(
             'coach_homepage.html',
             forename=forename,
-            lessons=lessons,
-            one_to_one_trainings=one_to_one_trainings,
+            past_lessons=past_lessons,
+            future_lessons=future_lessons,
+            past_trainings=past_trainings,
+            future_trainings=future_trainings,
             current_date=current_date,
             current_time=current_time
         )
