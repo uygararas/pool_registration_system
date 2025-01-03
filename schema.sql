@@ -544,19 +544,19 @@ VALUES (LAST_INSERT_ID(), 2, 9, 15, 'Mixed', 55.00);
 
 -- New Lesson 1 (Advanced Freestyle Lesson - December 2025)
 INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
-VALUES ('Advanced Freestyle Lesson - December', 1, 2, '2025-12-05', '10:00:00', '11:30:00', 70.00);
+VALUES ('Advanced Freestyle Lesson - December', 1, 2, '2025-02-05', '10:00:00', '11:30:00', 70.00);
 INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
 VALUES (LAST_INSERT_ID(), 2, 10, 15, 'Mixed', 70.00);
 
 -- New Lesson 2 (Senior Mixed Lesson - December 2025)
 INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
-VALUES ('Senior Mixed Lesson - December', 2, 3, '2025-12-12', '13:00:00', '14:30:00', 60.00);
+VALUES ('Senior Mixed Lesson - December', 2, 3, '2025-02-12', '13:00:00', '14:30:00', 60.00);
 INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
 VALUES (LAST_INSERT_ID(), 2, 12, 15, 'Mixed', 60.00);
 
 -- New Lesson 3 (Intermediate Female Lesson - December 2025)
 INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
-VALUES ('Intermediate Female Lesson - December', 1, 6, '2025-12-20', '11:00:00', '12:30:00', 55.00);
+VALUES ('Intermediate Female Lesson - December', 1, 6, '2025-02-20', '11:00:00', '12:30:00', 55.00);
 INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
 VALUES (LAST_INSERT_ID(), 2, 10, 12, 'FemaleOnly', 55.00);
 
@@ -573,3 +573,95 @@ FROM
     session s
 WHERE 
     s.date BETWEEN '2024-01-01' AND '2024-12-31';
+
+-- Reviews for Coach 1 (user_id = 2)
+
+-- Review 1
+INSERT INTO review (user_id, comment, rating) 
+VALUES (5, 'Excellent coaching techniques. Helped me improve my butterfly strokes significantly.', 4.5);
+
+INSERT INTO coachReview (review_id, coach_id) 
+VALUES (1, 2);
+
+-- Review 2
+INSERT INTO review (user_id, comment, rating) 
+VALUES (12, 'Very supportive and knowledgeable. Made every session enjoyable and productive.', 5.0);
+
+INSERT INTO coachReview (review_id, coach_id) 
+VALUES (2, 2);
+
+-- Review 3
+INSERT INTO review (user_id, comment, rating) 
+VALUES (13, 'Helped me build endurance and refine my freestyle. Highly recommended!', 4.0);
+
+INSERT INTO coachReview (review_id, coach_id) 
+VALUES (3, 2);
+
+-- Review 4
+INSERT INTO review (user_id, comment, rating) 
+VALUES (14, 'Great sessions and friendly attitude. Motivated me to push my limits.', 4.8);
+
+INSERT INTO coachReview (review_id, coach_id) 
+VALUES (4, 2);
+
+
+-- Reviews for Coach 2 (user_id = 8)
+
+-- Review 5
+INSERT INTO review (user_id, comment, rating) 
+VALUES (5, 'Innovative training methods. Enhanced my freestyle technique remarkably.', 4.7);
+
+INSERT INTO coachReview (review_id, coach_id) 
+VALUES (5, 8);
+
+-- Review 6
+INSERT INTO review (user_id, comment, rating) 
+VALUES (12, 'Patient and thorough. Helped me master complex swimming styles.', 5.0);
+
+INSERT INTO coachReview (review_id, coach_id) 
+VALUES (6, 8);
+
+-- Review 7
+INSERT INTO review (user_id, comment, rating) 
+VALUES (13, 'Dynamic and engaging sessions. Improved my overall performance.', 4.2);
+
+INSERT INTO coachReview (review_id, coach_id) 
+VALUES (7, 8);
+
+-- Review 8
+INSERT INTO review (user_id, comment, rating) 
+VALUES (14, 'Encouraging and expert guidance. Made learning enjoyable.', 4.6);
+
+INSERT INTO coachReview (review_id, coach_id) 
+VALUES (8, 8);
+
+
+-- Reviews for Coach 3 (user_id = 9)
+
+-- Review 9
+INSERT INTO review (user_id, comment, rating) 
+VALUES (5, 'Outstanding expertise in backstroke. Helped me achieve new personal bests.', 4.9);
+
+INSERT INTO coachReview (review_id, coach_id) 
+VALUES (9, 9);
+
+-- Review 10
+INSERT INTO review (user_id, comment, rating) 
+VALUES (12, 'Bad.', 2.0);
+
+INSERT INTO coachReview (review_id, coach_id) 
+VALUES (10, 9);
+
+-- Review 11
+INSERT INTO review (user_id, comment, rating) 
+VALUES (13, 'Exceptional coaching in backstroke. Boosted my confidence in the water.', 4.3);
+
+INSERT INTO coachReview (review_id, coach_id) 
+VALUES (11, 9);
+
+-- Review 12
+INSERT INTO review (user_id, comment, rating) 
+VALUES (14, 'Professional and inspiring. Helped me refine my stroke mechanics.', 4.7);
+
+INSERT INTO coachReview (review_id, coach_id) 
+VALUES (12, 9);
