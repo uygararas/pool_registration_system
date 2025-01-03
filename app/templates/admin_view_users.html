@@ -3,34 +3,41 @@
 {% block title %}All Users{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>All Users</h2>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>User ID</th>
-                <th>Forename</th>
-                <th>Surname</th>
-                <th>Role</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if users %}
-                {% for user in users %}
+<div class="container">
+    <h2 class="mt-4">All Users</h2>
+    <div class="mt-4">
+        <a href="{{ url_for('admin_homepage') }}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+
+    <div class="mt-4">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
                     <tr>
-                        <td>{{ user[0] }}</td>
-                        <td>{{ user[1] }}</td>
-                        <td>{{ user[2] }}</td>
-                        <td>{{ user[3] }}</td>
+                        <th>User ID</th>
+                        <th>Forename</th>
+                        <th>Surname</th>
+                        <th>Role</th>
                     </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center">No users found.</td>
-                </tr>
-            {% endif %}
-        </tbody>
-    </table>
-    <a href="{{ url_for('admin_homepage') }}" class="btn btn-secondary">Back to Admin Dashboard</a>
+                </thead>
+                <tbody>
+                    {% if users %}
+                        {% for user in users %}
+                            <tr>
+                                <td>{{ user[0] }}</td>
+                                <td>{{ user[1] }}</td>
+                                <td>{{ user[2] }}</td>
+                                <td><span class="badge badge-info">{{ user[3] }}</span></td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No users found</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}

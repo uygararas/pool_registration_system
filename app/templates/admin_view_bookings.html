@@ -3,62 +3,63 @@
 {% block title %}View All Bookings{% endblock %}
 
 {% block content %}
-<div class="bookings-container">
-    <h1 class="text-center my-4">All Bookings</h1>
-
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover text-center">
-            <thead class="thead-dark">
-                <tr>
-                    <th>Swimmer</th>
-                    <th>Session</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Payment Method</th>
-                    <th>Payment Status</th>
-                    <th>Session Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if bookings %}
-                    {% for booking in bookings %}
-                    <tr>
-                        <td>{{ booking.forename }} {{ booking.surname }}</td>
-                        <td>{{ booking.description }}</td>
-                        <td>{{ booking.date }}</td>
-                        <td>{{ booking.start_time }} - {{ booking.end_time }}</td>
-                        <td>{{ booking.paymentMethod }}</td>
-                        <td>
-                            <span class="badge badge-{{ 'success' if booking.isPaymentCompleted else 'warning' }}">
-                                {{ 'Completed' if booking.isPaymentCompleted else 'Pending' }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge badge-{{ 'success' if booking.isCompleted else 'warning' }}">
-                                {{ 'Completed' if booking.isCompleted else 'Pending' }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if not booking.isPaymentCompleted and booking.paymentMethod == 'Cash' %}
-                                <form action="{{ url_for('update_payment_status', swimmer_id=booking.swimmer_id, session_id=booking.session_id) }}" method="POST" style="display: inline;">
-                                    <button type="submit" class="btn btn-sm btn-outline-primary">Mark Payment Completed</button>
-                                </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="8" class="text-center text-muted">No bookings found</td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
+<div class="container">
+    <h2 class="mt-4">All Bookings</h2>
+    <div class="mt-4">
+        <a href="{{ url_for('admin_homepage') }}" class="btn btn-primary">Back to Dashboard</a>
     </div>
 
-    <div class="text-center mt-4">
-        <a href="{{ url_for('admin_homepage') }}" class="btn btn-secondary">Back to Admin Dashboard</a>
+    <div class="mt-4">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Swimmer</th>
+                        <th>Session</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Payment Method</th>
+                        <th>Payment Status</th>
+                        <th>Session Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if bookings %}
+                        {% for booking in bookings %}
+                        <tr>
+                            <td>{{ booking.forename }} {{ booking.surname }}</td>
+                            <td>{{ booking.description }}</td>
+                            <td>{{ booking.date }}</td>
+                            <td>{{ booking.start_time }} - {{ booking.end_time }}</td>
+                            <td>{{ booking.paymentMethod }}</td>
+                            <td>
+                                <span class="badge badge-{{ 'success' if booking.isPaymentCompleted else 'warning' }}">
+                                    {{ 'Completed' if booking.isPaymentCompleted else 'Pending' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ 'success' if booking.isCompleted else 'warning' }}">
+                                    {{ 'Completed' if booking.isCompleted else 'Pending' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if not booking.isPaymentCompleted and booking.paymentMethod == 'Cash' %}
+                                    <form action="{{ url_for('update_payment_status', swimmer_id=booking.swimmer_id, session_id=booking.session_id) }}" method="POST" style="display: inline;">
+                                        <button type="submit" class="btn btn-primary btn-sm">Mark Payment Completed</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">No bookings found</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
