@@ -91,6 +91,7 @@
         </form>
     </div>
     
+    
     <!-- Lessons Table -->
     <div class="lessons-table mt-4">
         <h4>Available Lessons</h4>
@@ -107,8 +108,9 @@
                         <th>Class Type</th>
                         <th>Capacity</th>
                         <th>Enrolled Students</th>
-                        <th>Price</th> <!-- New Column -->
+                        <th>Price</th> <!-- Existing Column -->
                         <th>Coach</th>
+                        <th>Coach Avg Rating</th> <!-- New Column -->
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -126,6 +128,13 @@
                             <td>{{ lesson.student_count }}</td>
                             <td>${{ "%.2f"|format(lesson.price) }}</td>
                             <td>{{ lesson.coach_forename }} {{ lesson.coach_surname }}</td>
+                            <td>
+                                {% if lesson.coach_avg_rating > 0 %}
+                                    {{ "%.1f"|format(lesson.coach_avg_rating) }}
+                                {% else %}
+                                    No Reviews
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if lesson.is_enrolled %}
                                     <form action="{{ url_for('exit_lesson', session_id=lesson.session_id) }}" method="post">

@@ -573,7 +573,7 @@ def swimmer_lessons():
         # NEW: Retrieve the description search term
         description = request.args.get('description')
 
-        # Updated SQL query to include session price
+        # Updated SQL query to include coach's average rating
         query = """
             SELECT 
                 s.session_id, 
@@ -588,6 +588,7 @@ def swimmer_lessons():
                 s.price,
                 c.forename AS coach_forename,
                 c.surname AS coach_surname,
+                IFNULL(cr_avg.avg_rating, 0) AS coach_avg_rating, -- New field for average rating
                 EXISTS (
                     SELECT 1 FROM booking b 
                     WHERE b.session_id = s.session_id AND b.swimmer_id = %s
@@ -597,6 +598,12 @@ def swimmer_lessons():
             JOIN lesson l ON s.session_id = l.session_id
             JOIN coach co ON l.coach_id = co.user_id
             JOIN user c ON co.user_id = c.user_id
+            LEFT JOIN (
+                SELECT cr.coach_id, AVG(r.rating) AS avg_rating
+                FROM review r
+                JOIN coachReview cr ON r.review_id = cr.review_id
+                GROUP BY cr.coach_id
+            ) cr_avg ON co.user_id = cr_avg.coach_id
             WHERE 1=1
         """
         params = [swimmer_id]
