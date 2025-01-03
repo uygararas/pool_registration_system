@@ -855,34 +855,91 @@ def exit_lesson(session_id):
         
         if not enrollment:
             flash('You are not enrolled in this lesson.', 'warning')
+            cursor.close()
             return redirect(url_for('swimmer_lessons'))
         
-        # Exit the lesson
+        # Fetch session details
+        cursor.execute('SELECT date, start_time, end_time FROM session WHERE session_id = %s', (session_id,))
+        session_details = cursor.fetchone()
+        
+        if not session_details:
+            flash('Session details not found.', 'danger')
+            cursor.close()
+            return redirect(url_for('swimmer_lessons'))
+        
+        session_date = session_details['date']
+        session_start = session_details['start_time']
+        session_end = session_details['end_time']
+        
         try:
+            # Begin Transaction
+            # 1. Remove the current swimmer's booking
             cursor.execute('DELETE FROM booking WHERE swimmer_id = %s AND session_id = %s', (swimmer_id, session_id))
             
-            # Handle wait queue
+            # 2. Fetch all swimmers in the wait queue ordered by request_date ASC
             cursor.execute("""
                 SELECT swimmer_id FROM swimmerWaitQueue
                 WHERE lesson_id = %s
                 ORDER BY request_date ASC
-                LIMIT 1
             """, (session_id,))
-            next_swimmer = cursor.fetchone()
+            wait_queue = cursor.fetchall()
             
-            if next_swimmer:
-                next_swimmer_id = next_swimmer['swimmer_id']
-                # Enroll the next swimmer
-                cursor.execute('INSERT INTO booking (swimmer_id, session_id, isCompleted, paymentMethod, isPaymentCompleted) VALUES (%s, %s, FALSE, "Cash", FALSE)', (next_swimmer_id, session_id))
-                # Remove from wait queue
-                cursor.execute('DELETE FROM swimmerWaitQueue WHERE swimmer_id = %s AND lesson_id = %s', (next_swimmer_id, session_id))
+            assigned = False  # Flag to indicate if a swimmer has been assigned
+            
+            for entry in wait_queue:
+                next_swimmer_id = entry['swimmer_id']
                 
-            mysql.connection.commit()
-            flash('Successfully exited the lesson.', 'success')
+                # Check for conflicting sessions for the next swimmer
+                cursor.execute("""
+                    SELECT s.session_id, s.date, s.start_time, s.end_time
+                    FROM booking b
+                    JOIN session s ON b.session_id = s.session_id
+                    WHERE b.swimmer_id = %s AND s.date = %s
+                      AND (
+                          (s.start_time < %s AND s.end_time > %s) OR
+                          (s.start_time < %s AND s.end_time > %s) OR
+                          (s.start_time >= %s AND s.end_time <= %s)
+                      )
+                """, (
+                    next_swimmer_id,
+                    session_date,
+                    session_end, session_start,
+                    session_end, session_start,
+                    session_start, session_end
+                ))
+                conflict = cursor.fetchone()
+                
+                if not conflict:
+                    # No conflict, assign the swimmer to the session
+                    cursor.execute("""
+                        INSERT INTO booking (swimmer_id, session_id, isCompleted, paymentMethod, isPaymentCompleted)
+                        VALUES (%s, %s, FALSE, "Cash", FALSE)
+                    """, (next_swimmer_id, session_id))
+                    
+                    # Remove the swimmer from the wait queue
+                    cursor.execute("""
+                        DELETE FROM swimmerWaitQueue
+                        WHERE swimmer_id = %s AND lesson_id = %s
+                    """, (next_swimmer_id, session_id))
+                    
+                    mysql.connection.commit()
+                    flash(f'Successfully assigned swimmer ID {next_swimmer_id} from the queue to the session.', 'success')
+                    assigned = True
+                    break  # Exit the loop after assigning one swimmer
+                else:
+                    # Conflict exists, skip to the next swimmer
+                    continue
+            
+            if not assigned and wait_queue:
+                flash('No suitable swimmers in the queue could be assigned due to scheduling conflicts.', 'info')
+            elif not wait_queue:
+                flash('You have successfully exited the lesson.', 'success')
+            
         except Exception as e:
             mysql.connection.rollback()
             flash(f'Error exiting lesson: {str(e)}', 'danger')
-        
+        finally:
+            cursor.close()
         
         return redirect(url_for('swimmer_lessons'))
     else:
