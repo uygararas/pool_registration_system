@@ -308,6 +308,22 @@ INSERT INTO employee (user_id, salary, emp_date) VALUES
 INSERT INTO coach (user_id, rank, specialization) VALUES
 (2, 'Senior', 'Butterfly');
 
+-- Coach 2
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(8, 'michael-coach@example.com', 'password', 'Michael-Coach', 'Johnson', 'Male', '1983-08-12');
+INSERT INTO employee (user_id, salary, emp_date) VALUES
+(8, 52000.00, '2013-06-01');
+INSERT INTO coach (user_id, rank, specialization) VALUES
+(8, 'Junior', 'Freestyle');
+
+-- Coach 3
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(9, 'sarah-coach@example.com', 'password', 'Sarah-Coach', 'Williams', 'Female', '1987-11-22');
+INSERT INTO employee (user_id, salary, emp_date) VALUES
+(9, 55000.00, '2014-09-15');
+INSERT INTO coach (user_id, rank, specialization) VALUES
+(9, 'Senior', 'Backstroke');
+
 -- 3.3 Lifeguard User
 INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
 (3, 'bob-lifeguard@example.com', 'password', 'Bob-Lifeguard', 'Brown', 'Male', '1990-03-25');
@@ -316,17 +332,50 @@ INSERT INTO employee (user_id, salary, emp_date) VALUES
 INSERT INTO lifeguard (user_id, license_no) VALUES
 (3, 'LG12345');
 
--- 3.4 Employee User
+-- Lifeguard 2
 INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
-(4, 'alice-employee@example.com', 'password', 'Alice-Employee', 'Davis', 'Female', '1992-04-30');
+(10, 'tom-lifeguard@example.com', 'password', 'Tom-Lifeguard', 'Taylor', 'Male', '1991-04-10');
 INSERT INTO employee (user_id, salary, emp_date) VALUES
-(4, 40000.00, '2018-11-15');
+(10, 47000.00, '2016-02-20');
+INSERT INTO lifeguard (user_id, license_no) VALUES
+(10, 'LG67890');
+
+-- Lifeguard 3
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(11, 'linda-lifeguard@example.com', 'password', 'Linda-Lifeguard', 'Anderson', 'Female', '1993-07-05');
+INSERT INTO employee (user_id, salary, emp_date) VALUES
+(11, 48000.00, '2017-05-30');
+INSERT INTO lifeguard (user_id, license_no) VALUES
+(11, 'LG54321');
 
 -- 3.5 Swimmer User
 INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
 (5, 'charlie-swimmer@example.com', 'password', 'Charlie-Swimmer', 'Miller', 'Male', '2000-06-20');
 INSERT INTO swimmer (user_id, swimming_level) VALUES
 (5, 'Intermediate');
+
+-- 3.7 Swimmer
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(7, 'emily-swimmer@example.com', 'password', 'Emily-Swimmer', 'Miller', 'Female', '2000-06-20');
+INSERT INTO swimmer (user_id, swimming_level) VALUES
+(7, 'Intermediate');
+
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(12, 'george-swimmer@example.com', 'password', 'George-Swimmer', 'Thomas', 'Male', '2001-05-18');
+INSERT INTO swimmer (user_id, swimming_level) VALUES
+(12, 'Beginner');
+
+-- Swimmer 4
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(13, 'hannah-swimmer@example.com', 'password', 'Hannah-Swimmer', 'Martin', 'Female', '1999-09-30');
+INSERT INTO swimmer (user_id, swimming_level) VALUES
+(13, 'Intermediate');
+
+-- Swimmer 5
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(14, 'kevin-swimmer@example.com', 'password', 'Kevin-Swimmer', 'Lee', 'Male', '2002-12-12');
+INSERT INTO swimmer (user_id, swimming_level) VALUES
+(14, 'Advanced');
 
 -- 3.6 Member User
 INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
@@ -336,33 +385,152 @@ INSERT INTO swimmer (user_id, swimming_level) VALUES
 INSERT INTO member (user_id, free_training_remaining) VALUES
 (6, 5);
 
--- 3.7 Swimmer
 INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
-(7, 'emily-swimmer@example.com', 'password', 'Emily-Swimmer', 'Miller', 'Female', '2000-06-20');
+(16, 'patrick-swimmer@example.com', 'password', 'Patrick-Swimmer', 'Martinez', 'Male', '2004-08-08');
 INSERT INTO swimmer (user_id, swimming_level) VALUES
-(7, 'Intermediate');
+(16, 'Beginner');
+
+-- Swimmer 8
+INSERT INTO user (user_id, email, password, forename, surname, gender, birth_date) VALUES
+(17, 'sophia-swimmer@example.com', 'password', 'Sophia-Swimmer', 'Rodriguez', 'Female', '2005-02-14');
+INSERT INTO swimmer (user_id, swimming_level) VALUES
+(17, 'Advanced');
+
+-- Swimmer 7 as Member
+INSERT INTO member (user_id, free_training_remaining) VALUES
+(16, 5);
+
+-- Swimmer 8 as Member
+INSERT INTO member (user_id, free_training_remaining) VALUES
+(17, 5);
+
+
+-- ###### END OF USERS INSERTION ######
+
+
+
+-- #####################################################
+
 
 -- Insert Lessons (Session and Lesson Details)
 -- Insert Sessions (3 in Pool 1 and 3 in Pool 2)
-INSERT INTO session (session_id, description, pool_id, lane_no, date, start_time, end_time) VALUES
-(1, 'Advanced swimming techniques', 1, 1, '2024-01-01', '09:00:00', '10:00:00'),
-(2, 'Beginner swimming lesson', 1, 2, '2024-01-01', '09:30:00', '11:00:00'),
-(3, 'Intermediate butterfly technique', 1, 3, '2024-01-03', '11:00:00', '12:00:00'),
-(4, 'Personalized training for freestyle', 2, 1, '2024-01-04', '09:00:00', '10:00:00'),
-(5, 'One-to-one backstroke training', 2, 2, '2024-01-05', '10:00:00', '11:00:00'),
-(6, 'Advanced team lesson', 2, 3, '2024-01-06', '11:00:00', '12:00:00');
+-- Lesson 1: Mixed
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Advanced Mixed Lesson', 1, 1, '2024-12-05', '10:00:00', '11:30:00', 55.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 2, 10, 15, 'Mixed', 55.00);
 
--- Assign Lesson or One-to-One Training types
--- Lesson sessions (Session IDs 1, 2, and 6)
-INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price) VALUES
-(1, 2, 10, 15, 'Mixed', 50.00),
-(2, 2, 11, 12, 'FemaleOnly', 60.00),
-(6, 2, 15, 16, 'MaleOnly', 70.00);
+-- Lesson 2: Female Only
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Female Only Lesson', 1, 2, '2024-12-12', '09:00:00', '10:30:00', 60.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 8, 10, 12, 'FemaleOnly', 60.00);
 
-INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style, price) VALUES
-(3, 2, 'Butterfly', 100.00),
-(4, 2, 'Freestyle', 90.00),
-(5, 2, 'Backstroke', 80.00);
+-- Lesson 3: Male Only
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Male Only Lesson', 2, 1, '2024-12-20', '14:00:00', '15:30:00', 65.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 9, 12, 14, 'MaleOnly', 65.00);
 
--- Insert sample bookings
+-- Lesson 4: Mixed Evening
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Mixed Lesson Evening', 2, 2, '2024-12-28', '18:00:00', '19:30:00', 55.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 2, 13, 15, 'Mixed', 55.00);
 
+-- Insert Lessons in February 2025
+
+-- Lesson 5: Advanced Butterfly
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Advanced Butterfly Lesson', 1, 3, '2025-02-03', '08:00:00', '09:30:00', 70.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 8, 10, 15, 'Mixed', 70.00);
+
+-- Lesson 6: Freestyle Improvement
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Freestyle Improvement', 2, 3, '2025-02-07', '10:00:00', '11:30:00', 60.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 9, 11, 12, 'Mixed', 60.00);
+
+-- Lesson 7: Beginner Mixed
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Beginner Mixed Lesson', 1, 4, '2025-02-10', '13:00:00', '14:30:00', 50.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 2, 9, 15, 'Mixed', 50.00);
+
+-- Lesson 8: Intermediate Female
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Intermediate Female Lesson', 2, 4, '2025-02-14', '15:00:00', '16:30:00', 60.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 8, 12, 12, 'FemaleOnly', 60.00);
+
+-- Lesson 9: Male Only Morning
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Male Only Morning Lesson', 1, 5, '2025-02-18', '07:00:00', '08:30:00', 65.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 9, 13, 14, 'MaleOnly', 65.00);
+
+-- Lesson 10: Mixed Afternoon
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Mixed Lesson Afternoon', 2, 5, '2025-02-22', '14:00:00', '15:30:00', 55.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 2, 14, 15, 'Mixed', 55.00);
+
+-- Lesson 11: Advanced Backstroke
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Advanced Backstroke', 1, 6, '2025-02-25', '16:00:00', '17:30:00', 70.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 8, 10, 15, 'Mixed', 70.00);
+
+-- Lesson 12: Freestyle Mastery
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Freestyle Mastery', 2, 6, '2025-02-28', '18:00:00', '19:30:00', 60.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 9, 11, 12, 'Mixed', 60.00);
+
+-- OneToOneTraining 1 (December 2024)
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('One-to-One Butterfly Training', 1, 1, '2024-12-10', '11:00:00', '12:00:00', 100.00);
+INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style, price)
+VALUES (LAST_INSERT_ID(), 2, 'Butterfly', 100.00);
+
+-- OneToOneTraining 2 (December 2024)
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('One-to-One Freestyle Training', 2, 1, '2024-12-20', '13:00:00', '14:00:00', 90.00);
+INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style, price)
+VALUES (LAST_INSERT_ID(), 8, 'Freestyle', 90.00);
+
+-- OneToOneTraining 3 (February 2025)
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('One-to-One Backstroke Training', 1, 2, '2025-02-05', '10:00:00', '11:00:00', 80.00);
+INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style, price)
+VALUES (LAST_INSERT_ID(), 9, 'Backstroke', 80.00);
+
+-- OneToOneTraining 4 (February 2025)
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('One-to-One Breaststroke Training', 2, 2, '2025-02-12', '12:00:00', '13:00:00', 85.00);
+INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style, price)
+VALUES (LAST_INSERT_ID(), 2, 'Breaststroke', 85.00);
+
+-- OneToOneTraining 5 (February 2025)
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('One-to-One Mixed Style Training', 1, 3, '2025-02-20', '14:00:00', '15:00:00', 95.00);
+INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style, price)
+VALUES (LAST_INSERT_ID(), 8, 'Mixed', 95.00);
+
+-- OneToOneTraining 6 (February 2025)
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('One-to-One Advanced Freestyle', 2, 3, '2025-02-25', '16:00:00', '17:00:00', 100.00);
+INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style, price)
+VALUES (LAST_INSERT_ID(), 9, 'Freestyle', 100.00);
+
+INSERT INTO booking (swimmer_id, session_id, isCompleted, isPaymentCompleted)
+SELECT 
+    6 AS swimmer_id, 
+    s.session_id, 
+    TRUE AS isCompleted, 
+    TRUE AS isPaymentCompleted
+FROM 
+    session s
+WHERE 
+    s.date BETWEEN '2024-01-01' AND '2024-12-31';

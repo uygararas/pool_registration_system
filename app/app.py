@@ -573,7 +573,12 @@ def swimmer_lessons():
         # NEW: Retrieve the description search term
         description = request.args.get('description')
 
-        # Updated SQL query to include coach's average rating
+        # Obtain current date and time
+        current_datetime = datetime.now()
+        current_date = current_datetime.date()
+        current_time = current_datetime.time()
+
+        # Updated SQL query to include coach's average rating and filter future sessions
         query = """
             SELECT 
                 s.session_id, 
@@ -608,7 +613,17 @@ def swimmer_lessons():
         """
         params = [swimmer_id]
 
-        # Apply filters if provided
+        # Add condition to show only future sessions
+        # Sessions with date > current_date OR (date = current_date AND start_time > current_time)
+        query += """
+            AND (
+                s.date > %s
+                OR (s.date = %s AND s.start_time > %s)
+            )
+        """
+        params.extend([current_date, current_date, current_time])
+
+        # Apply additional filters if provided
         if class_date:
             query += " AND s.date = %s"
             params.append(class_date)
