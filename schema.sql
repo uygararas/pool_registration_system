@@ -448,7 +448,7 @@ VALUES (LAST_INSERT_ID(), 8, 10, 15, 'Mixed', 70.00);
 
 -- Lesson 6: Freestyle Improvement
 INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
-VALUES ('Freestyle Improvement', 2, 3, '2025-02-07', '10:00:00', '11:30:00', 60.00);
+VALUES ('Freestyle Improvement', 2, 3, '2025-02-03', '09:00:00', '11:00:00', 60.00);
 INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
 VALUES (LAST_INSERT_ID(), 9, 11, 12, 'Mixed', 60.00);
 
