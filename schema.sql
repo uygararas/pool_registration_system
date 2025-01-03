@@ -524,6 +524,45 @@ VALUES ('One-to-One Advanced Freestyle', 2, 3, '2025-02-25', '16:00:00', '17:00:
 INSERT INTO oneToOneTraining (session_id, coach_id, swimming_style, price)
 VALUES (LAST_INSERT_ID(), 9, 'Freestyle', 100.00);
 
+-- Old Lesson 1 (Advanced Mixed Lesson - December 2024)
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Advanced Mixed Lesson - December', 1, 3, '2024-12-10', '15:00:00', '16:30:00', 50.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 2, 8, 12, 'Mixed', 50.00);
+
+-- Old Lesson 2 (Beginner Female Lesson - December 2024)
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Beginner Female Lesson - December', 2, 4, '2024-12-15', '10:00:00', '11:30:00', 45.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 2, 10, 12, 'FemaleOnly', 45.00);
+
+-- Old Lesson 3 (Intermediate Mixed Lesson - December 2024)
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Intermediate Mixed Lesson - December', 1, 5, '2024-12-20', '09:00:00', '10:30:00', 55.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 2, 9, 15, 'Mixed', 55.00);
+
+-- New Lesson 1 (Advanced Freestyle Lesson - December 2025)
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Advanced Freestyle Lesson - December', 1, 2, '2025-12-05', '10:00:00', '11:30:00', 70.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 2, 10, 15, 'Mixed', 70.00);
+
+-- New Lesson 2 (Senior Mixed Lesson - December 2025)
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Senior Mixed Lesson - December', 2, 3, '2025-12-12', '13:00:00', '14:30:00', 60.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 2, 12, 15, 'Mixed', 60.00);
+
+-- New Lesson 3 (Intermediate Female Lesson - December 2025)
+INSERT INTO session (description, pool_id, lane_no, date, start_time, end_time, price)
+VALUES ('Intermediate Female Lesson - December', 1, 6, '2025-12-20', '11:00:00', '12:30:00', 55.00);
+INSERT INTO lesson (session_id, coach_id, student_count, capacity, session_type, price)
+VALUES (LAST_INSERT_ID(), 2, 10, 12, 'FemaleOnly', 55.00);
+
+
+
+
 INSERT INTO booking (swimmer_id, session_id, isCompleted, isPaymentCompleted)
 SELECT 
     6 AS swimmer_id, 
