@@ -326,7 +326,7 @@ def swimmer_homepage():
         """, (swimmer_id,))
         completed_sessions = cursor.fetchall()
 
-        # Enhance completed_sessions with review flags
+        # Enhance completed_sessions with review flags and coach name
         for session_item in completed_sessions:
             session_id = session_item['session_id']
             session_type = session_item['session_type']
@@ -334,6 +334,7 @@ def swimmer_homepage():
             # Initialize flags
             session_item['has_reviewed_coach'] = False
             session_item['has_reviewed_lesson'] = False
+            session_item['coach_name'] = "N/A"  # Default value
             
             if session_type in ['Lesson', 'One-to-One Training']:
                 # Fetch coach_id for the session
@@ -351,6 +352,16 @@ def swimmer_homepage():
                 coach_id = coach['coach_id'] if coach else None
                 
                 if coach_id:
+                    # Fetch coach's forename and surname
+                    cursor.execute("""
+                        SELECT forename, surname FROM user WHERE user_id = %s
+                    """, (coach_id,))
+                    coach_info = cursor.fetchone()
+                    if coach_info:
+                        session_item['coach_name'] = f"{coach_info['forename']} {coach_info['surname']}"
+                    else:
+                        session_item['coach_name'] = "N/A"
+                    
                     # Check if coach has been reviewed
                     cursor.execute("""
                         SELECT cr.review_id
@@ -361,8 +372,8 @@ def swimmer_homepage():
                     coach_review = cursor.fetchone()
                     session_item['has_reviewed_coach'] = True if coach_review else False
                 
+                # If session is 'Lesson', check if lesson has been reviewed
                 if session_type == 'Lesson':
-                    # Check if lesson has been reviewed
                     cursor.execute("""
                         SELECT lr.review_id
                         FROM lessonReview lr
@@ -371,6 +382,7 @@ def swimmer_homepage():
                     """, (session_id, swimmer_id))
                     lesson_review = cursor.fetchone()
                     session_item['has_reviewed_lesson'] = True if lesson_review else False
+            # For 'Free Training', coach_name remains "N/A"
 
         cursor.close()
         

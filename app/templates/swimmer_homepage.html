@@ -24,7 +24,7 @@
                     <th>End Time</th>
                     <th>Pool Location</th>
                     <th>IsPaymentCompleted</th>
-                    <th>Actions</th> <!-- New Actions Column -->
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -75,6 +75,7 @@
                     <th>Start Time</th>
                     <th>End Time</th>
                     <th>Pool Location</th>
+                    <th>Coach Name</th> <!-- New Coach Name Column -->
                     <th>IsPaymentCompleted</th>
                     <th>Actions</th>
                 </tr>
@@ -89,6 +90,7 @@
                         <td>{{ session.start_time }}</td>
                         <td>{{ session.end_time }}</td>
                         <td>{{ session.pool_location }}</td>
+                        <td>{{ session.coach_name }}</td> <!-- Display Coach Name -->
                         <td>{{ "PaymentSuccessful" if session.isPaymentCompleted else "WaitingPayment" }}</td>
                         <td>
                             {% if session.session_type == 'Lesson' %}
